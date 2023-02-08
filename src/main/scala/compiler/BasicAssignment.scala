@@ -7,7 +7,7 @@ class BasicAssignment extends Module {
     val a = Output(UInt(8.W))
   })
 
-  val clk = Reg(UInt(8.W))
+  //val clk = Reg(UInt(8.W))
   val r: Recipe = Sequential(Seq(
     Action {
       () => {
@@ -30,7 +30,7 @@ class BasicAssignment extends Module {
 
   def compile(r: Recipe): Unit = {
     r match {
-      case Tick => clk := clk + 1.U
+      case Tick => clock := !clock
       case Action(a) => a()
       case Sequential(recipes) =>
         for (r <- recipes) {
