@@ -6,7 +6,8 @@ import chisel3.util._
 class Recipe {
   def compile(c: Clock): Unit = {
     val ticks = countTicks()
-    val state_bits = log2Ceil(ticks)
+    println(ticks)
+    val state_bits = if (ticks == 0) 0 else log2Ceil(ticks+1)
     val stateReg = RegInit(UInt(state_bits.W), 0.U)
     this match {
       case Sequential(recipes) =>
@@ -20,6 +21,18 @@ class Recipe {
       case Action(a) => a()
     }
   }
+
+  def recipesToActionBlocks(r: Seq[Recipe]): Seq[Seq[Action]] = {
+    r.foldLeft(Seq(Seq()))
+    r match {
+      case Action =>
+      case Tick =>
+      case _ => ???
+    }
+  }
+
+  // if the recipe is a Sequential, then aggregate blocks of Actions into a Seq[Seq[Action]]
+  // directly emit a state machine just for Seq[Seq[Action]]
 
   private def countTicks(): Int = {
     this match {
