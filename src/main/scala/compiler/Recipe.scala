@@ -4,19 +4,19 @@ import chisel3._
 
 object Recipe {
   type RecipeModule = Bool => Bool
-  private val tickModule: RecipeModule = (go: Bool) => {
+  private[compiler] val tickModule: RecipeModule = (go: Bool) => {
     val doneReg = RegInit(Bool(), 0.B)
     doneReg := go
     doneReg
   }
-  private def actionModule(action: Action): RecipeModule = (go: Bool) => {
+  private[compiler] def actionModule(action: Action): RecipeModule = (go: Bool) => {
     when(go) {
       action.a()
     }
     go
   }
 
-  private def sequentialModule(recipes: Seq[Recipe]): RecipeModule = (go: Bool) => {
+  private[compiler] def sequentialModule(recipes: Seq[Recipe]): RecipeModule = (go: Bool) => {
     val recipeMods: Seq[RecipeModule] = recipes.map(compileNoPulse)
     val done = recipeMods.foldLeft(go) { case (go, r) =>
       r(go)
