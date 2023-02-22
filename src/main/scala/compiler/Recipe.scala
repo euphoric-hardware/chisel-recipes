@@ -1,55 +1,32 @@
 package compiler
 
 import chisel3._
-import chisel3.util._
 
-/*
-abstract class RecipeModule extends Module {
-  val io = IO(new Bundle {
-    val go = Input(Bool())
-    val done = Output(Bool())
-  })
-}
-*/
 object Recipe {
   type RecipeModule = Bool => Bool
-  val tickModule: RecipeModule = (go: Bool) => {
+  private val tickModule: RecipeModule = (go: Bool) => {
     val doneReg = RegInit(Bool(), 0.B)
     doneReg := go
     doneReg
   }
-  def actionModule(action: Action): RecipeModule = (go: Bool) => {
+  private def actionModule(action: Action): RecipeModule = (go: Bool) => {
     when(go) {
       action.a()
     }
     go
   }
 
-  def sequentialModule(recipes: Seq[Recipe]): RecipeModule = (go: Bool) => {
-    val recipeMods: Seq[RecipeModule] = recipes.map(compile(_))
+  private def sequentialModule(recipes: Seq[Recipe]): RecipeModule = (go: Bool) => {
+    val recipeMods: Seq[RecipeModule] = recipes.map(compileNoPulse)
     val done = recipeMods.foldLeft(go) { case (go, r) =>
       r(go)
     }
     done
-    /*
-    recipeMods.sliding(2).map(s => (s(0), s(1))).foreach { case (r1, r2) =>
-      r2(r1
-    }
-    recipes.sliding(2).foreach { recipeGroup =>
-      recipeGroup(1).io.go := recipeGroup(0).io.done
-    }
-    */
-   /*
-    recipes.head.io.go := pulse
-    io.done := recipes.last.io.done
-  */
   }
 
-  def compile(r: Recipe): RecipeModule = {
+  private def compileNoPulse(r: Recipe): RecipeModule = {
     r match {
       case Sequential(recipes) =>
-        //val subRecipeMods = recipes.map(_.compile())
-        //Module(new SequentialModule(subRecipeMods))
         sequentialModule(recipes)
       case Tick =>
         tickModule
@@ -57,53 +34,24 @@ object Recipe {
         actionModule(a)
     }
   }
-}
 
+  def compile(r: Recipe): Bool = {
+    val recMod = compileNoPulse(r)
+    val pulseReg = RegInit(Bool(), 0.B)
+    val prevPulseReg = Reg(Bool())
+    prevPulseReg := pulseReg
+    pulseReg := 1.B
 
-sealed trait Recipe {
-    /*
-    val ticks = countTicks()
-    println(ticks)
-    val state_bits = if (ticks == 0) 0 else log2Ceil(ticks+1)
-    val stateReg = RegInit(UInt(state_bits.W), 0.U)
-    this match {
-      case Sequential(recipes) =>
-        for ((r, i) <- recipes.zipWithIndex) {
-          when(stateReg === i.U) {
-            r.compile(c)
-          }
-        }
-      case Tick =>
-        stateReg := Mux(stateReg === state_bits.U, state_bits.U, stateReg + 1.U)
-      case Action(a) => a()
-    }
-    */
-  def recipesToActionBlocks(r: Seq[Recipe]): Seq[Seq[Action]] = {
-    /*
-    r.foldLeft(Seq(Seq()))
-    r match {
-      case Action =>
-      case Tick =>
-      case _ => ???
-    }
-    */
-   ???
-  }
-
-  // if the recipe is a Sequential, then aggregate blocks of Actions into a Seq[Seq[Action]]
-  // directly emit a state machine just for Seq[Seq[Action]]
-
-  private def countTicks(): Int = {
-    /*
-    this match {
-      case Sequential(recipes) =>
-        recipes.count(x => x == Tick)
-      case _ => 0
-    }
-    */
-   ???
+    val pulse = RegInit(Bool(), 0.B)
+    when(prevPulseReg === 0.B && pulseReg === 1.B) {
+      pulse := 1.B
+    }.otherwise(pulse := 0.B)
+    recMod(pulse)
   }
 }
+
+
+sealed trait Recipe
 //case class Skip(next: Recipe) extends Recipe
 case object Tick extends Recipe
 case class Action(a: () => Unit) extends Recipe
