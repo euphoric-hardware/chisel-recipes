@@ -1,8 +1,8 @@
 package compiler
 
 import chisel3._
-
-class WhileModule(cond: Bool, inner: Module) extends Module {
+/*
+class WhileModule(cond: Bool, inner: RecipeModule) extends RecipeModule {
   val io = IO(new Bundle {
     val go = Input(Bool())
     val doneIn = Input(Bool())
@@ -10,6 +10,8 @@ class WhileModule(cond: Bool, inner: Module) extends Module {
     val doneOut = Output(Bool())
   })
 
+  inner.io.go := io.go || (inner.io.done && !cond)
+  io.done := inner.io.done && cond
   val doneReg = RegInit(Bool(), 0.B)
   val prevPulseReg = RegInit(Bool(), 0.B)
   val pulseReg = RegInit(Bool(), 0.B)
@@ -30,4 +32,4 @@ class WhileModule(cond: Bool, inner: Module) extends Module {
       prevPulseReg := 0.B
     }
   }
-}
+}*/

@@ -27,5 +27,5 @@ class BasicAssignment extends Module {
       }
     }
   ))
-  r.compile(this.clock)
+  Recipe.compile(r)
 }

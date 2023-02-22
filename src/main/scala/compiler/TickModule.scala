@@ -1,13 +1,9 @@
 package compiler
 
 import chisel3._
-
-class TickModule extends Module {
-  val io = IO(new Bundle {
-    val go = Input(Bool())
-    val done = Output(Bool())
-  })
-
+/*
+class TickModule extends RecipeModule {
   private val doneReg = RegInit(Bool(), io.go)
   io.done := doneReg
 }
+*/
