@@ -68,7 +68,7 @@ class CompilerSpec extends AnyFreeSpec with ChiselScalatestTester {
     }
   }
 
-  "sequential circuit should work" in {
+  "tick-only sequential circuit should work" in {
     class SeqExample extends Module {
       val io = IO(new Bundle {
         val go = Input(Bool())
@@ -94,6 +94,53 @@ class CompilerSpec extends AnyFreeSpec with ChiselScalatestTester {
 
       c.clock.step()
       c.io.done.expect(0.B)
+    }
+  }
+
+  "action-only sequential circuit should work" in {
+    class SeqExample extends Module {
+      val io = IO(new Bundle {
+        val go = Input(Bool())
+        val done = Output(Bool())
+        val x = Output(UInt(8.W))
+      })
+      io.x := 0.U
+      val seq = Recipe.sequentialModule(Seq(Action(() => io.x := 10.U)))
+      io.done := seq(io.go)
+    }
+    test(new SeqExample()) { c =>
+      c.io.go.poke(1.B)
+      c.io.done.expect(1.B)
+      c.io.x.expect(10.U)
+      c.io.go.poke(0.B)
+      c.io.done.expect(0.B)
+      c.io.x.expect(0.U)
+    }
+  }
+
+  "mixed tick and action sequential circuit should work" in {
+    class SeqExample extends Module {
+      val io = IO(new Bundle {
+        val go = Input(Bool())
+        val done = Output(Bool())
+        val x = Output(UInt(8.W))
+      })
+      io.x := 0.U
+      val seq = Recipe.sequentialModule(Seq(Action(() => io.x := 10.U), Tick, Tick, Action(() => io.x := 8.U), Tick))
+      io.done := seq(io.go)
+    }
+    test(new SeqExample()).withAnnotations(Seq(WriteVcdAnnotation)) { c =>
+      c.io.go.poke(1.B)
+      c.io.x.expect(10.U) // the first action is combinational
+      c.clock.step() // first tick
+      c.io.go.poke(0.B) // pulse go
+      c.io.x.expect(0.U) // first tick
+      c.clock.step() // second tick
+      c.io.x.expect(8.U) // second tick
+      c.clock.step() // final tick
+      c.io.done.expect(1.B)
+      c.clock.step()
+      c.io.done.expect(0.B) // done should pulse
     }
   }
 
