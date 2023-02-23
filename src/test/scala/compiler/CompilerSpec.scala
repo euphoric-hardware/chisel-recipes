@@ -170,4 +170,35 @@ class CompilerSpec extends AnyFreeSpec with ChiselScalatestTester {
       dut.io.a.expect(100.U)
     }
   }
+
+  "Recipes should support nested sequentials" in {
+    class BasicAssignment extends Module {
+      val io = IO(new Bundle {
+        val a = Output(UInt(8.W))
+      })
+
+      io.a := 100.U
+      val r: Recipe = Sequential(Seq(
+        Sequential(Seq(
+          Action { () => io.a := 10.U },
+          Tick
+        )),
+        Sequential(Seq(
+          Action { () => io.a := 0.U },
+          Tick
+        )),
+        Action { () => io.a := 20.U }
+      ))
+      Recipe.compile(r)
+    }
+    test(new BasicAssignment()).withAnnotations(Seq(WriteVcdAnnotation)) { dut =>
+      dut.io.a.expect(10.U)
+      dut.clock.step()
+      dut.io.a.expect(0.U)
+      dut.clock.step()
+      dut.io.a.expect(20.U)
+      dut.clock.step()
+      dut.io.a.expect(100.U)
+    }
+  }
 }

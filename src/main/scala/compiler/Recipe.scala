@@ -3,7 +3,7 @@ package compiler
 import chisel3._
 
 object Recipe {
-  type RecipeModule = Bool => Bool
+  type RecipeModule = Bool => Bool // go: Bool => done: Bool
   private[compiler] val tickModule: RecipeModule = (go: Bool) => {
     val doneReg = RegInit(Bool(), 0.B)
     doneReg := go
