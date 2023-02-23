@@ -38,15 +38,8 @@ object Recipe {
   def compile(r: Recipe): Bool = {
     val recMod = compileNoPulse(r)
     val pulseReg = RegInit(Bool(), 0.B)
-    val prevPulseReg = Reg(Bool())
-    prevPulseReg := pulseReg
     pulseReg := 1.B
-
-    val pulse = RegInit(Bool(), 0.B)
-    when(prevPulseReg === 0.B && pulseReg === 1.B) {
-      pulse := 1.B
-    }.otherwise(pulse := 0.B)
-    recMod(pulse)
+    recMod(pulseReg === 0.U)
   }
 }
 
