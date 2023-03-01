@@ -201,4 +201,59 @@ class CompilerSpec extends AnyFreeSpec with ChiselScalatestTester {
       dut.io.a.expect(100.U)
     }
   }
+
+  "Basic while loop" in {
+    class WhileExample extends Module {
+      val io = IO(new Bundle {
+        val out = Output(UInt(8.W))
+      })
+      val r = RegInit(UInt(8.W), 0.U)
+      io.out := r
+
+      val recipe: Recipe = While(
+        r < 10.U,
+        Sequential(Seq(
+          Action(() => r := r + 1.U),
+          Tick
+        ))
+      )
+      Recipe.compile(recipe)
+    }
+    test(new WhileExample()).withAnnotations(Seq(WriteVcdAnnotation)) { dut =>
+      dut.io.out.expect(0.U)
+      dut.clock.step()
+      dut.io.out.expect(1.U)
+      dut.clock.step()
+      dut.io.out.expect(2.U)
+      dut.clock.step()
+    }
+  }
+
+  "Basic if-then-else statement" in {
+    class ITEExample extends Module {
+      val io = IO(new Bundle {
+        val in = Input(UInt(8.W))
+        val out = Output(UInt(8.W))
+      })
+      val r = RegInit(UInt(8.W), 0.U)
+      io.out := r
+
+      val recipe: Recipe = IfThenElse(
+        io.in < 10.U,
+        Action(() => io.out := 2.U),
+        Action(() => io.out := 5.U),
+      )
+      Recipe.compile(recipe)
+    }
+    test(new ITEExample()).withAnnotations(Seq(WriteVcdAnnotation)) { dut =>
+      dut.io.in.poke(8.U)
+      dut.io.out.expect(2.U)
+      dut.clock.step()
+      dut.reset.poke(1.B)
+      dut.clock.step()
+      dut.io.in.poke(12.U)
+      dut.io.out.expect(5.U)
+    }
+  }
+
 }
