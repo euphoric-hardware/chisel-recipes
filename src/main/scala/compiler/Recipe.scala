@@ -51,6 +51,15 @@ object Recipe {
     done
   }
 
+  private[compiler] def whenModule(cond: Bool, body: Recipe): RecipeModule = go => {
+    val done = RegInit(Bool(), 0.B)
+    when (cond) {
+      done := compileNoPulse(body)(go)
+    }
+    done
+  }
+
+
   private def compileNoPulse(r: Recipe): RecipeModule = {
     r match {
       case Sequential(recipes) =>
@@ -63,6 +72,8 @@ object Recipe {
         whileModule(cond, loop)
       case IfThenElse(cond, thenCase, elseCase) =>
         ifThenElseModule(cond, thenCase, elseCase)
+      case When(cond, body) =>
+        whenModule(cond, body)
     }
   }
 
@@ -81,8 +92,8 @@ case object Tick extends Recipe
 case class Action(a: () => Unit) extends Recipe
 case class Sequential(recipes: Seq[Recipe]) extends Recipe
 //case class Parallel(recipes: List[Recipe]) extends Recipe
-//case class Wait(cond: Boolean) extends Recipe
-//case class When(cond: Boolean, expr: Recipe) extends Recipe
+//case class Wait(cond: Bool) extends Recipe
+case class When(cond: Bool, body: Recipe) extends Recipe
 case class IfThenElse(cond: Bool, thenCase: Recipe, elseCase: Recipe) extends Recipe
 case class While(cond: Bool, loop: Recipe) extends Recipe
 //case class Background(recipe: Recipe) extends Recipe

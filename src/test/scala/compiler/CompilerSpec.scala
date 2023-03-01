@@ -256,4 +256,16 @@ class CompilerSpec extends AnyFreeSpec with ChiselScalatestTester {
     }
   }
 
+  "GCD test" in {
+    test(new GCDRecipe()).withAnnotations(Seq(WriteVcdAnnotation)) { dut =>
+      dut.io.loadingValues.poke(1.B)
+      dut.io.value1.poke(48.U)
+      dut.io.value2.expect(32.U)
+      dut.clock.step()
+      dut.io.loadingValues.poke(0.B)
+      dut.clock.step(5)
+      dut.io.outputValid.expect(1.B)
+      dut.io.outputGCD.expect(16.U)
+    }
+  }
 }
