@@ -235,9 +235,8 @@ class CompilerSpec extends AnyFreeSpec with ChiselScalatestTester {
         val in = Input(UInt(8.W))
         val out = Output(UInt(8.W))
       })
-      val r = RegInit(UInt(8.W), 0.U)
-      io.out := r
 
+      io.out := 0.U
       val recipe: Recipe = IfThenElse(
         io.in < 10.U,
         Action(() => io.out := 2.U),

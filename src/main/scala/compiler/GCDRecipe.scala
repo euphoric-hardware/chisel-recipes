@@ -14,9 +14,12 @@ class GCDRecipe extends Module {
   val x = Reg(UInt())
   val y = Reg(UInt())
 
-  val r1: Recipe = IfThenElse(x > y,
-    Action(() => x := x - y),
-    Action(() => y := y - x)
+  val r1: Recipe = Action(() =>
+    when(x > y) {
+        x := x - y
+    }.otherwise {
+        y := y - x
+    }
   )
 
   val r2: Recipe = When(io.loadingValues,
@@ -32,6 +35,8 @@ class GCDRecipe extends Module {
   })
 
   val r: Recipe = Sequential(Seq(
+    waitUntil(io.loadingValues === 1.B),
+    
     r1,
     r2,
     r3
