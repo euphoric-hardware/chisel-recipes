@@ -10,6 +10,8 @@ class GCDRecipe extends Module {
     val outputGCD = Output(UInt(16.W))
     val outputValid = Output(Bool())
   })
+  io.outputGCD := 1.U
+  io.outputValid := 0.B
 
   val x = Reg(UInt())
   val y = Reg(UInt())
@@ -35,7 +37,7 @@ class GCDRecipe extends Module {
   })
 
   val r: Recipe = Sequential(Seq(
-    waitUntil(io.loadingValues === 1.B),
+    WaitUntil(io.loadingValues === 1.B),
     
     r1,
     r2,

@@ -18,27 +18,22 @@ object Recipe {
 
   private[compiler] def sequentialModule(recipes: Seq[Recipe]): RecipeModule = go => {
     val recipeMods: Seq[RecipeModule] = recipes.map(compileNoPulse)
-    val done = recipeMods.foldLeft(go) { case (go, r) =>
-      r(go)
+    val done = recipeMods.foldLeft(go) { case (g, r) =>
+      r(g)
     }
     done
   }
 
   private[compiler] def whileModule(cond: Bool, body: Recipe): RecipeModule = go => {
     val recDone = RegInit(Bool(), 0.B)
-    val internalGo = RegInit(Bool(), go)
     val done = RegInit(Bool(), 0.B)
     val recMod = compileNoPulse(body)
-    when (internalGo) {
-      recDone := recMod(internalGo)
-      when (recDone) {
-        val pulseReg = RegInit(Bool(), 0.B)
-        pulseReg := 1.B
-        internalGo := (pulseReg === 0.U)
-        when (cond) {
-          done := internalGo
-        }.otherwise(done := 0.B)
-      }
+
+    when ((go || recDone) && cond) {
+      recDone := recMod((go || recDone) && cond)
+    }
+    when(!cond) {
+      done := recDone
     }
     done
   }
@@ -60,6 +55,14 @@ object Recipe {
   }
 
 
+  private[compiler] def waitUntilModule(cond: Bool): RecipeModule = go => {
+    whileModule(cond, Tick)(go)
+  }
+
+  private[compiler] def foreverModule(body: Recipe): RecipeModule = go => {
+    whileModule(1.B, body)(go)
+  }
+
   private def compileNoPulse(r: Recipe): RecipeModule = {
     r match {
       case Sequential(recipes) =>
@@ -74,6 +77,10 @@ object Recipe {
         ifThenElseModule(cond, thenCase, elseCase)
       case When(cond, body) =>
         whenModule(cond, body)
+      case WaitUntil(cond) =>
+        waitUntilModule(cond)
+      case Forever(body) =>
+        foreverModule(body)
     }
   }
 
@@ -97,3 +104,5 @@ case class When(cond: Bool, body: Recipe) extends Recipe
 case class IfThenElse(cond: Bool, thenCase: Recipe, elseCase: Recipe) extends Recipe
 case class While(cond: Bool, loop: Recipe) extends Recipe
 //case class Background(recipe: Recipe) extends Recipe
+case class WaitUntil(cond: Bool) extends Recipe
+case class Forever(body: Recipe) extends Recipe
