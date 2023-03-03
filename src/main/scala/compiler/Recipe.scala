@@ -25,6 +25,12 @@ object Recipe {
   }
 
   private[compiler] def whileModule(cond: Bool, body: Recipe): RecipeModule = go => {
+    val bodyCircuit = compileNoPulse(body)
+    val bodyGo = Wire(Bool())
+    val bodyDone = bodyCircuit(bodyGo)
+    bodyGo := (bodyDone && cond) || go
+    !cond && bodyDone
+    /*
     val recDone = RegInit(Bool(), 0.B)
     val done = RegInit(Bool(), 0.B)
     val recMod = compileNoPulse(body)
@@ -35,7 +41,7 @@ object Recipe {
     when(!cond) {
       done := recDone
     }
-    done
+    done*/
   }
 
   private[compiler] def ifThenElseModule(cond: Bool, thenCase: Recipe, elseCase: Recipe): RecipeModule = go => {
