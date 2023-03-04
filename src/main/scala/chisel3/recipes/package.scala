@@ -31,7 +31,7 @@ package object recipes {
     whileLoop(cond)(Tick)
   }
 
-  def forever(r: Recipe): Recipe = {
-    whileLoop(true.B)(r)
+  def forever(r: Recipe*): Recipe = {
+    whileLoop(true.B)(r:_*)
   }
 }
