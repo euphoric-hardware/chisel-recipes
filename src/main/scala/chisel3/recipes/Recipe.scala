@@ -1,22 +1,22 @@
-package compiler
+package chisel3.recipes
 
 import chisel3._
 
 object Recipe {
   type RecipeModule = Bool => Bool // go: Bool => done: Bool
-  private[compiler] val tickModule: RecipeModule = go => {
+  private[recipes] val tickModule: RecipeModule = go => {
     val doneReg = RegInit(Bool(), 0.B)
     doneReg := go
     doneReg
   }
-  private[compiler] def actionModule(action: Action): RecipeModule = go => {
+  private[recipes] def actionModule(action: Action): RecipeModule = go => {
     when(go) {
       action.a()
     }
     go
   }
 
-  private[compiler] def sequentialModule(recipes: Recipe*): RecipeModule = go => {
+  private[recipes] def sequentialModule(recipes: Recipe*): RecipeModule = go => {
     val recipeMods: Seq[RecipeModule] = recipes.map(compileNoPulse)
     val done = recipeMods.foldLeft(go) { case (g, r) =>
       r(g)
@@ -24,7 +24,7 @@ object Recipe {
     done
   }
 
-  private[compiler] def whileModule(cond: Bool, body: Recipe): RecipeModule = go => {
+  private[recipes] def whileModule(cond: Bool, body: Recipe): RecipeModule = go => {
     val bodyCircuit = compileNoPulse(body)
     val bodyGo = Wire(Bool())
     val bodyDone = bodyCircuit(bodyGo)

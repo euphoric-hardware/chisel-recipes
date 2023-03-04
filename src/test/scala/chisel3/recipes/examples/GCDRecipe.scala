@@ -1,4 +1,4 @@
-package compiler
+package chisel3.recipes
 
 import chisel3._
 /*

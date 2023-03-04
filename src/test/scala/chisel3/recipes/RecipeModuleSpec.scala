@@ -1,4 +1,4 @@
-package compiler
+package chisel3.recipes
 
 import chisel3._
 import chiseltest._
@@ -14,7 +14,7 @@ class RecipeModuleSpec extends AnyFreeSpec with ChiselScalatestTester {
     io.x := 0.U // default value
   }
 
-  "action circuit should work" in {
+  "action circuit" in {
     test(new RecipeBase {
       val action = Recipe.actionModule(Action{() => io.x := 10.U})
       io.done := action(io.go)
@@ -38,7 +38,7 @@ class RecipeModuleSpec extends AnyFreeSpec with ChiselScalatestTester {
     }
   }
 
-  "tick circuit should work" in {
+  "tick circuit" in {
     test(new RecipeBase {
       val tick = Recipe.tickModule
       io.done := tick(io.go)
@@ -63,7 +63,7 @@ class RecipeModuleSpec extends AnyFreeSpec with ChiselScalatestTester {
     }
   }
 
-  "tick-only sequential circuit should work" in {
+  "tick-only sequential circuit" in {
     test(new RecipeBase {
       val seq = Recipe.sequentialModule(Tick, Tick)
       io.done := seq(io.go)
@@ -87,7 +87,7 @@ class RecipeModuleSpec extends AnyFreeSpec with ChiselScalatestTester {
     }
   }
 
-  "action-only sequential circuit should work" in {
+  "action-only sequential circuit" in {
     test(new RecipeBase {
       val seq = Recipe.sequentialModule(Action(() => io.x := 10.U))
       io.done := seq(io.go)
@@ -101,7 +101,7 @@ class RecipeModuleSpec extends AnyFreeSpec with ChiselScalatestTester {
     }
   }
 
-  "mixed tick and action sequential circuit should work" in {
+  "mixed tick and action sequential circuit" in {
     test(new RecipeBase {
       val seq = Recipe.sequentialModule(Action(() => io.x := 10.U), Tick, Tick, Action(() => io.x := 8.U), Tick)
       io.done := seq(io.go)
@@ -120,7 +120,7 @@ class RecipeModuleSpec extends AnyFreeSpec with ChiselScalatestTester {
     }
   }
 
-  "while circuit should work" in {
+  "while circuit" in {
     test(new RecipeBase {
       val reg = RegInit(UInt(8.W), 0.U)
       io.x := reg

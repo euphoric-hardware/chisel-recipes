@@ -1,8 +1,8 @@
-package compiler
+package chisel3.recipes
 
 import chisel3._
 import chiseltest._
-import compiler.Recipe.compile
+import recipes.Recipe.compile
 import org.scalatest.freespec.AnyFreeSpec
 
 class CompilerSpec extends AnyFreeSpec with ChiselScalatestTester {
