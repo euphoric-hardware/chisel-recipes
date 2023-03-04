@@ -64,16 +64,20 @@ object Recipe {
 }
 
 
-sealed trait Recipe
+private[recipes] sealed trait Recipe {
+  def compile(): Unit = {
+    Recipe.compile(this)
+  }
+}
+private[recipes] case object Tick extends Recipe
+private[recipes] case class Action(a: () => Unit) extends Recipe
+private[recipes] case class Sequential(recipes: Recipe*) extends Recipe
+private[recipes] case class While(cond: Bool, loop: Recipe) extends Recipe
 //case class Skip(next: Recipe) extends Recipe
-case object Tick extends Recipe
-case class Action(a: () => Unit) extends Recipe
-case class Sequential(recipes: Recipe*) extends Recipe
 //case class Parallel(recipes: List[Recipe]) extends Recipe
 //case class Wait(cond: Bool) extends Recipe
 //case class When(cond: Bool, body: Recipe) extends Recipe
 //case class IfThenElse(cond: Bool, thenCase: Recipe, elseCase: Recipe) extends Recipe
-case class While(cond: Bool, loop: Recipe) extends Recipe
 //case class Background(recipe: Recipe) extends Recipe
 //case class WaitUntil(cond: Bool) extends Recipe
 //case class Forever(body: Recipe) extends Recipe

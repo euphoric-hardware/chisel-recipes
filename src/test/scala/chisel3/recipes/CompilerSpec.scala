@@ -2,7 +2,6 @@ package chisel3.recipes
 
 import chisel3._
 import chiseltest._
-import recipes.Recipe.compile
 import org.scalatest.freespec.AnyFreeSpec
 
 class CompilerSpec extends AnyFreeSpec with ChiselScalatestTester {
@@ -15,14 +14,13 @@ class CompilerSpec extends AnyFreeSpec with ChiselScalatestTester {
   "Should compile/run very basic recipe" in {
     test(new Example {
       io.out := 100.U
-      val r: Recipe = Sequential(
-        Action { () => io.out := 10.U },
-        Tick,
-        Action { () => io.out := 0.U },
-        Tick,
-        Action { () => io.out := 20.U }
-      )
-      compile(r)
+      recipe (
+        action { io.out := 10.U },
+        tick,
+        action { io.out := 0.U },
+        tick,
+        action { io.out := 20.U }
+      ).compile()
     }).withAnnotations(Seq(WriteVcdAnnotation)) { dut =>
       dut.io.out.expect(10.U)
       dut.clock.step()
@@ -37,18 +35,17 @@ class CompilerSpec extends AnyFreeSpec with ChiselScalatestTester {
   "Recipes should support nested sequentials" in {
     test(new Example {
         io.out := 100.U
-        val r: Recipe = Sequential(
-          Sequential(
-            Action { () => io.out := 10.U },
-            Tick
+        recipe (
+          recipe (
+            action { io.out := 10.U },
+            tick
           ),
-          Sequential(
-            Action { () => io.out := 0.U },
-            Tick
+          recipe (
+            action { io.out := 0.U },
+            tick
           ),
-          Action { () => io.out := 20.U }
-        )
-        compile(r)
+          action { io.out := 20.U }
+        ).compile()
     }).withAnnotations(Seq(WriteVcdAnnotation)) { dut =>
       dut.io.out.expect(10.U)
       dut.clock.step()
@@ -65,14 +62,10 @@ class CompilerSpec extends AnyFreeSpec with ChiselScalatestTester {
       val r = RegInit(UInt(8.W), 0.U)
       io.out := r
 
-      val recipe: Recipe = While(
-        r < 10.U,
-        Sequential(
-          Action(() => {r := r + 1.U}),
-          Tick
-        )
-      )
-      compile(recipe)
+      whileLoop(r < 10.U)(
+        action { r := r + 1.U },
+        tick
+      ).compile()
     }).withAnnotations(Seq(WriteVcdAnnotation)) { dut =>
       for (i <- 0 until 10) {
         dut.io.out.expect(i.U)
@@ -88,16 +81,13 @@ class CompilerSpec extends AnyFreeSpec with ChiselScalatestTester {
       val r = RegInit(UInt(8.W), 0.U)
       io.out := r
 
-      val recipe: Recipe = Sequential(
-        While(r < 10.U,
-          Sequential(
-            Action (() => r := r + 1.U),
-            Tick
-          )
+      recipe (
+        whileLoop(r < 10.U)(
+          action { r := r + 1.U },
+          tick
         ),
-        Action(() => io.out := 2.U * r)
-      )
-      compile(recipe)
+        action { io.out := 2.U * r }
+      ).compile()
     }).withAnnotations(Seq(WriteVcdAnnotation)) { dut =>
       for (i <- 0 until 10) {
         dut.io.out.expect(i.U)
