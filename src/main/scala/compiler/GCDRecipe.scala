@@ -1,7 +1,7 @@
 package compiler
 
 import chisel3._
-
+/*
 class GCDRecipe extends Module {
   val io = IO(new Bundle {
     val value1 = Input(UInt(16.W))
@@ -46,3 +46,4 @@ class GCDRecipe extends Module {
 
   Recipe.compile(r)
 }
+ */

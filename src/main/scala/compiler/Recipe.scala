@@ -16,7 +16,7 @@ object Recipe {
     go
   }
 
-  private[compiler] def sequentialModule(recipes: Seq[Recipe]): RecipeModule = go => {
+  private[compiler] def sequentialModule(recipes: Recipe*): RecipeModule = go => {
     val recipeMods: Seq[RecipeModule] = recipes.map(compileNoPulse)
     val done = recipeMods.foldLeft(go) { case (g, r) =>
       r(g)
@@ -30,37 +30,9 @@ object Recipe {
     val bodyDone = bodyCircuit(bodyGo)
     bodyGo := (bodyDone && cond) || go
     !cond && bodyDone
-    /*
-    val recDone = RegInit(Bool(), 0.B)
-    val done = RegInit(Bool(), 0.B)
-    val recMod = compileNoPulse(body)
-
-    when ((go || recDone) && cond) {
-      recDone := recMod((go || recDone) && cond)
-    }
-    when(!cond) {
-      done := recDone
-    }
-    done*/
   }
 
-  private[compiler] def ifThenElseModule(cond: Bool, thenCase: Recipe, elseCase: Recipe): RecipeModule = go => {
-    val done = RegInit(Bool(), 0.B)
-    when (cond) {
-      done := compileNoPulse(thenCase)(go)
-    }.otherwise(done := compileNoPulse(elseCase)(go))
-    done
-  }
-
-  private[compiler] def whenModule(cond: Bool, body: Recipe): RecipeModule = go => {
-    val done = RegInit(Bool(), 0.B)
-    when (cond) {
-      done := compileNoPulse(body)(go)
-    }
-    done
-  }
-
-
+  /*
   private[compiler] def waitUntilModule(cond: Bool): RecipeModule = go => {
     whileModule(cond, Tick)(go)
   }
@@ -68,25 +40,18 @@ object Recipe {
   private[compiler] def foreverModule(body: Recipe): RecipeModule = go => {
     whileModule(1.B, body)(go)
   }
+   */
 
   private def compileNoPulse(r: Recipe): RecipeModule = {
     r match {
-      case Sequential(recipes) =>
-        sequentialModule(recipes)
+      case Sequential(recipes @ _*) =>
+        sequentialModule(recipes:_*)
       case Tick =>
         tickModule
       case a @ Action(_) =>
         actionModule(a)
       case While(cond, loop) =>
         whileModule(cond, loop)
-      case IfThenElse(cond, thenCase, elseCase) =>
-        ifThenElseModule(cond, thenCase, elseCase)
-      case When(cond, body) =>
-        whenModule(cond, body)
-      case WaitUntil(cond) =>
-        waitUntilModule(cond)
-      case Forever(body) =>
-        foreverModule(body)
     }
   }
 
@@ -103,12 +68,12 @@ sealed trait Recipe
 //case class Skip(next: Recipe) extends Recipe
 case object Tick extends Recipe
 case class Action(a: () => Unit) extends Recipe
-case class Sequential(recipes: Seq[Recipe]) extends Recipe
+case class Sequential(recipes: Recipe*) extends Recipe
 //case class Parallel(recipes: List[Recipe]) extends Recipe
 //case class Wait(cond: Bool) extends Recipe
-case class When(cond: Bool, body: Recipe) extends Recipe
-case class IfThenElse(cond: Bool, thenCase: Recipe, elseCase: Recipe) extends Recipe
+//case class When(cond: Bool, body: Recipe) extends Recipe
+//case class IfThenElse(cond: Bool, thenCase: Recipe, elseCase: Recipe) extends Recipe
 case class While(cond: Bool, loop: Recipe) extends Recipe
 //case class Background(recipe: Recipe) extends Recipe
-case class WaitUntil(cond: Bool) extends Recipe
-case class Forever(body: Recipe) extends Recipe
+//case class WaitUntil(cond: Bool) extends Recipe
+//case class Forever(body: Recipe) extends Recipe

@@ -6,120 +6,110 @@ import compiler.Recipe.compile
 import org.scalatest.freespec.AnyFreeSpec
 
 class CompilerSpec extends AnyFreeSpec with ChiselScalatestTester {
-
+  abstract class Example extends Module {
+    val io = IO(new Bundle {
+      val out = Output(UInt(8.W))
+    })
+  }
 
   "Should compile/run very basic recipe" in {
-    class BasicAssignment extends Module {
-      val io = IO(new Bundle {
-        val a = Output(UInt(8.W))
-      })
-
-      io.a := 100.U
-      val r: Recipe = Sequential(Seq(
-        Action { () => io.a := 10.U },
+    test(new Example {
+      io.out := 100.U
+      val r: Recipe = Sequential(
+        Action { () => io.out := 10.U },
         Tick,
-        Action { () => io.a := 0.U },
+        Action { () => io.out := 0.U },
         Tick,
-        Action { () => io.a := 20.U }
-      ))
+        Action { () => io.out := 20.U }
+      )
       compile(r)
-    }
-    test(new BasicAssignment()).withAnnotations(Seq(WriteVcdAnnotation)) { dut =>
-      dut.io.a.expect(10.U)
+    }).withAnnotations(Seq(WriteVcdAnnotation)) { dut =>
+      dut.io.out.expect(10.U)
       dut.clock.step()
-      dut.io.a.expect(0.U)
+      dut.io.out.expect(0.U)
       dut.clock.step()
-      dut.io.a.expect(20.U)
+      dut.io.out.expect(20.U)
       dut.clock.step()
-      dut.io.a.expect(100.U)
+      dut.io.out.expect(100.U)
     }
   }
 
   "Recipes should support nested sequentials" in {
-    class BasicAssignment extends Module {
-      val io = IO(new Bundle {
-        val a = Output(UInt(8.W))
-      })
-
-      io.a := 100.U
-      val r: Recipe = Sequential(Seq(
-        Sequential(Seq(
-          Action { () => io.a := 10.U },
-          Tick
-        )),
-        Sequential(Seq(
-          Action { () => io.a := 0.U },
-          Tick
-        )),
-        Action { () => io.a := 20.U }
-      ))
-      compile(r)
-    }
-    test(new BasicAssignment()).withAnnotations(Seq(WriteVcdAnnotation)) { dut =>
-      dut.io.a.expect(10.U)
+    test(new Example {
+        io.out := 100.U
+        val r: Recipe = Sequential(
+          Sequential(
+            Action { () => io.out := 10.U },
+            Tick
+          ),
+          Sequential(
+            Action { () => io.out := 0.U },
+            Tick
+          ),
+          Action { () => io.out := 20.U }
+        )
+        compile(r)
+    }).withAnnotations(Seq(WriteVcdAnnotation)) { dut =>
+      dut.io.out.expect(10.U)
       dut.clock.step()
-      dut.io.a.expect(0.U)
+      dut.io.out.expect(0.U)
       dut.clock.step()
-      dut.io.a.expect(20.U)
+      dut.io.out.expect(20.U)
       dut.clock.step()
-      dut.io.a.expect(100.U)
+      dut.io.out.expect(100.U)
     }
   }
 
   "Basic while loop" in {
-    class WhileExample extends Module {
-      val io = IO(new Bundle {
-        val out = Output(UInt(8.W))
-      })
+    test(new Example {
       val r = RegInit(UInt(8.W), 0.U)
       io.out := r
 
       val recipe: Recipe = While(
         r < 10.U,
-        Sequential(Seq(
+        Sequential(
           Action(() => {r := r + 1.U}),
           Tick
-        ))
+        )
       )
       compile(recipe)
-    }
-    test(new WhileExample()).withAnnotations(Seq(WriteVcdAnnotation)) { dut =>
-      for (i <- 0 until 10) {
-        dut.io.out.expect(i.U)
-        dut.clock.step()
-      }
-    }
-  }
-
-  "While loop should transmit done signal" in {
-    class WhileCompound extends Module {
-      val io = IO(new Bundle {
-        val out = Output(UInt(8.W))
-      })
-      val r = RegInit(UInt(8.W), 0.U)
-      io.out := 0.U
-
-      val recipe: Recipe = Sequential(Seq(
-        While(r < 10.U,
-          Sequential(Seq(
-            Action (() => r := r + 1.U),
-          ))
-        ),
-        Tick,
-        Action(() => io.out := 2.U * r)
-      ))
-      compile(recipe)
-    }
-    test(new WhileCompound()).withAnnotations(Seq(WriteVcdAnnotation)) { dut =>
+    }).withAnnotations(Seq(WriteVcdAnnotation)) { dut =>
       for (i <- 0 until 10) {
         dut.io.out.expect(i.U)
         dut.clock.step()
       }
       dut.clock.step()
-      dut.io.out.expect(20.U)
+      dut.io.out.expect(10.U)
     }
   }
 
+  "While loop with a terminating action" in {
+    test(new Example {
+      val r = RegInit(UInt(8.W), 0.U)
+      io.out := r
+
+      val recipe: Recipe = Sequential(
+        While(r < 10.U,
+          Sequential(
+            Action (() => r := r + 1.U),
+            Tick
+          )
+        ),
+        Action(() => io.out := 2.U * r)
+      )
+      compile(recipe)
+    }).withAnnotations(Seq(WriteVcdAnnotation)) { dut =>
+      for (i <- 0 until 10) {
+        dut.io.out.expect(i.U)
+        dut.clock.step()
+      }
+      dut.io.out.expect(20.U) // the 2x assignment to io.out is combinational
+      dut.clock.step()
+      dut.io.out.expect(10.U) // io.out should revert back to 10 after the recipe completes
+    }
+  }
+
+/*
   "Basic if-then-else statement" in {
     class ITEExample extends Module {
       val io = IO(new Bundle {
@@ -155,4 +145,6 @@ class CompilerSpec extends AnyFreeSpec with ChiselScalatestTester {
       dut.io.outputGCD.expect(16.U)
     }
   }
+
+ */
 }
