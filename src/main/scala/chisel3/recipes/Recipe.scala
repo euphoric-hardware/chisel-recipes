@@ -5,9 +5,14 @@ import sourcecode.{FileName, Line, Enclosing}
 
 object Recipe {
   type RecipeModule = Bool => Bool // go: Bool => done: Bool
-  private[recipes] val tickModule: RecipeModule = go => {
+  private[recipes] def tickModule(tick: Tick, debugPrints: Boolean, cycleCounter: UInt): RecipeModule = go => {
     val doneReg = RegInit(Bool(), 0.B)
     doneReg := go
+    if (debugPrints) {
+      when(doneReg) {
+        chisel3.printf(cf"time=[$cycleCounter] Tick ${tick.d.enclosing.value} (${tick.d.fileName.value}:${tick.d.line.value}) completed\n")
+      }
+    }
     doneReg
   }
 
@@ -17,7 +22,7 @@ object Recipe {
     }
     if (debugPrints) {
       when(go) {
-        chisel3.printf(cf"Action ${action.d.enclosing.value} in ${action.d.fileName.value}:${action.d.line.value} fired at time ${cycleCounter}\n")
+        chisel3.printf(cf"time=[$cycleCounter] Action ${action.d.enclosing.value} (${action.d.fileName.value}:${action.d.line.value}) is active\n")
       }
     }
     go
@@ -43,8 +48,8 @@ object Recipe {
     r match {
       case Sequential(recipes, _) =>
         sequentialModule(recipes, debugPrints, cycleCounter)
-      case Tick(_) =>
-        tickModule
+      case t @ Tick(_) =>
+        tickModule(t, debugPrints, cycleCounter)
       case a @ Action(_, _) =>
         actionModule(a, debugPrints, cycleCounter)
       case While(cond, loop, _) =>

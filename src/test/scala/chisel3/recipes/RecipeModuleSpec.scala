@@ -44,7 +44,7 @@ class RecipeModuleSpec extends AnyFreeSpec with ChiselScalatestTester {
 
   "tick circuit" in {
     test(new RecipeBase {
-      val tick = Recipe.tickModule
+      val tick = Recipe.tickModule(Tick(debugInfo), false, 0.U)
       io.done := tick(io.go)
     }) { c =>
       c.io.done.expect(0.B)
