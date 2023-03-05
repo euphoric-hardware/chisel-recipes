@@ -4,7 +4,7 @@ import chisel3._
 import chiseltest._
 import org.scalatest.freespec.AnyFreeSpec
 
-class CompilerSpec extends AnyFreeSpec with ChiselScalatestTester {
+class RecipeSpec extends AnyFreeSpec with ChiselScalatestTester {
   abstract class Example extends Module {
     val io = IO(new Bundle {
       val out = Output(UInt(8.W))
@@ -20,7 +20,7 @@ class CompilerSpec extends AnyFreeSpec with ChiselScalatestTester {
         action { io.out := 0.U },
         tick,
         action { io.out := 20.U }
-      ).compile()
+      ).compile(debugPrints = true)
     }).withAnnotations(Seq(WriteVcdAnnotation)) { dut =>
       dut.io.out.expect(10.U)
       dut.clock.step()
@@ -96,6 +96,23 @@ class CompilerSpec extends AnyFreeSpec with ChiselScalatestTester {
       dut.io.out.expect(20.U) // the 2x assignment to io.out is combinational
       dut.clock.step()
       dut.io.out.expect(10.U) // io.out should revert back to 10 after the recipe completes
+    }
+  }
+
+  "while loop with immediate passthrough" in {
+    test(new Example {
+      io.out := 1.U
+      val w = WireDefault(0.B)
+      recipe (
+        whileLoop(w)( // condition is immediately false
+          tick // shouldn't execute
+        ),
+        action { io.out := 100.U } // should get here combinationally
+      ).compile()
+    }) { dut =>
+      dut.io.out.expect(100.U)
+      dut.clock.step(1)
+      dut.io.out.expect(1.U) // recipe is over, io.out should snap back to default
     }
   }
 
