@@ -27,6 +27,7 @@ class GCDRecipe extends Module {
       x := io.value1
       y := io.value2
     },
+    tick,
     whileLoop(y > 0.U)(
       action {
         when(x > y) {
@@ -38,7 +39,7 @@ class GCDRecipe extends Module {
       tick
     ),
     tick
-  ).compile()
+  ).compile(CompileOpts(Some(DebugPrints()), true))
 }
 
 class GCDRecipeSpec extends AnyFreeSpec with ChiselScalatestTester {

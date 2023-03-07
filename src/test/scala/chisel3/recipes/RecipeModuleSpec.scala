@@ -20,7 +20,7 @@ class RecipeModuleSpec extends AnyFreeSpec with ChiselScalatestTester {
 
   "action circuit" in {
     test(new RecipeBase {
-      val action = Recipe.actionModule(Action(() => io.x := 10.U, debugInfo), false, 0.U)
+      val action = Recipe.actionModule(Action(() => io.x := 10.U, debugInfo), 0.U, CompileOpts.default)
       io.done := action(io.go)
     }) { c =>
       c.io.x.expect(0.U)
@@ -44,7 +44,7 @@ class RecipeModuleSpec extends AnyFreeSpec with ChiselScalatestTester {
 
   "tick circuit" in {
     test(new RecipeBase {
-      val tick = Recipe.tickModule(Tick(debugInfo), false, 0.U)
+      val tick = Recipe.tickModule(Tick(debugInfo), 0.U, CompileOpts.default)
       io.done := tick(io.go)
     }) { c =>
       c.io.done.expect(0.B)
@@ -69,7 +69,7 @@ class RecipeModuleSpec extends AnyFreeSpec with ChiselScalatestTester {
 
   "tick-only sequential circuit" in {
     test(new RecipeBase {
-      val seq = Recipe.sequentialModule(Seq(Tick(debugInfo), Tick(debugInfo)), false, 0.U)
+      val seq = Recipe.sequentialModule(Sequential(Seq(Tick(debugInfo), Tick(debugInfo)), debugInfo), 0.U, CompileOpts.default)
       io.done := seq(io.go)
     }) { c =>
       c.io.done.expect(0.B)
@@ -93,7 +93,7 @@ class RecipeModuleSpec extends AnyFreeSpec with ChiselScalatestTester {
 
   "action-only sequential circuit" in {
     test(new RecipeBase {
-      val seq = Recipe.sequentialModule(Seq(Action(() => io.x := 10.U, debugInfo)), false, 0.U)
+      val seq = Recipe.sequentialModule(Sequential(Seq(Action(() => io.x := 10.U, debugInfo)), debugInfo), 0.U, CompileOpts.default)
       io.done := seq(io.go)
     }) { c =>
       c.io.go.poke(1.B)
@@ -107,13 +107,13 @@ class RecipeModuleSpec extends AnyFreeSpec with ChiselScalatestTester {
 
   "mixed tick and action sequential circuit" in {
     test(new RecipeBase {
-      val seq = Recipe.sequentialModule(Seq(
+      val seq = Recipe.sequentialModule(Sequential(Seq(
         Action(() => io.x := 10.U, debugInfo),
         Tick(debugInfo),
         Tick(debugInfo),
         Action(() => io.x := 8.U, debugInfo),
         Tick(debugInfo)
-      ), false, 0.U)
+      ), debugInfo), 0.U, CompileOpts.default)
       io.done := seq(io.go)
     }).withAnnotations(Seq(WriteVcdAnnotation)) { c =>
       c.io.go.poke(1.B)
@@ -134,10 +134,13 @@ class RecipeModuleSpec extends AnyFreeSpec with ChiselScalatestTester {
     test(new RecipeBase {
       val reg = RegInit(UInt(8.W), 0.U)
       io.x := reg
-      val whileCircuit = Recipe.whileModule(reg < 4.U, Sequential(Seq(
-        Action(() => reg := reg + 1.U, debugInfo),
-        Tick(debugInfo)
-      ), debugInfo), false, 0.U)
+      val whileCircuit = Recipe.whileModule(
+        While(cond=reg < 4.U,
+          loop=Sequential(Seq(
+            Action(() => reg := reg + 1.U, debugInfo),
+            Tick(debugInfo)
+          ), debugInfo), d=debugInfo),
+        0.U, CompileOpts.default)
       io.done := whileCircuit(io.go)
     }).withAnnotations(Seq(WriteVcdAnnotation)) { c =>
       c.io.go.poke(1.B)
