@@ -114,12 +114,12 @@ object Recipe {
     if (compileOpts.debugWires) {
       val goName = canonicalName("while", "go", w.d)
       val namedGo = WireDefault(go).suggestName(goName)
-      forceName(namedGo, goName)
+      //forceName(namedGo, goName)
       dontTouch(namedGo)
 
       val doneName = canonicalName("while", "done", w.d)
       val namedDone = WireDefault(done).suggestName(doneName)
-      forceName(namedDone, doneName)
+      //forceName(namedDone, doneName)
       dontTouch(namedDone)
     }
 
