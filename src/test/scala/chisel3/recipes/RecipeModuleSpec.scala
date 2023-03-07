@@ -16,7 +16,7 @@ class RecipeModuleSpec extends AnyFreeSpec with ChiselScalatestTester {
   }
 
   // This isn't important anyways for the module behavior
-  val debugInfo = DebugInfo(implicitly[Line], implicitly[FileName], implicitly[Enclosing])
+  val debugInfo = DebugInfo(implicitly[Line], implicitly[FileName], implicitly[Enclosing], "nothing")
 
   "action circuit" in {
     test(new RecipeBase {

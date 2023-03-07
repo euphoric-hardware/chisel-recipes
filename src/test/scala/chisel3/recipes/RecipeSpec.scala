@@ -116,6 +116,22 @@ class RecipeSpec extends AnyFreeSpec with ChiselScalatestTester {
     }
   }
 
+  "waitUntil with immediate completion" in {
+    test(new Example {
+      io.out := 1.U
+      val w = WireDefault(1.U)
+      recipe (
+        waitUntil(w === 1.U),
+        action { io.out := 100.U }
+      ).compile(CompileOpts.debugAll)
+    }).withAnnotations(Seq(WriteVcdAnnotation)) { dut =>
+      dut.io.out.expect(100.U)
+      dut.clock.step(1)
+      dut.io.out.expect(1.U)
+      dut.clock.step(1)
+    }
+  }
+
 /*
   "Basic if-then-else statement" in {
     class ITEExample extends Module {
@@ -139,19 +155,5 @@ class RecipeSpec extends AnyFreeSpec with ChiselScalatestTester {
       dut.io.out.expect(5.U)
     }
   }
-
-  "GCD test" in {
-    test(new GCDRecipe()).withAnnotations(Seq(WriteVcdAnnotation)) { dut =>
-      dut.io.loadingValues.poke(1.B)
-      dut.io.value1.poke(48.U)
-      dut.io.value2.poke(32.U)
-      dut.clock.step()
-      dut.io.loadingValues.poke(0.B)
-      dut.clock.step(5)
-      dut.io.outputValid.expect(1.B)
-      dut.io.outputGCD.expect(16.U)
-    }
-  }
-
  */
 }

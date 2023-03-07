@@ -23,12 +23,12 @@ object Recipe {
     doneReg := go
 
     if (compileOpts.debugWires) {
-      val goName = canonicalName("tick", "go", tick.d)
+      val goName = canonicalName(tick.d.entity, "go", tick.d)
       val namedGo = WireDefault(go).suggestName(goName)
       forceName(namedGo, goName)
       dontTouch(namedGo)
 
-      val doneName = canonicalName("tick", "done", tick.d)
+      val doneName = canonicalName(tick.d.entity, "done", tick.d)
       val namedDone = WireDefault(doneReg).suggestName(doneName)
       forceName(namedDone, doneName)
       dontTouch(namedDone)
@@ -36,7 +36,7 @@ object Recipe {
 
     if (compileOpts.debugPrints.isDefined) {
       when(go) {
-        debugPrint(cycleCounter, "Tick", "about to tick", tick.d)
+        debugPrint(cycleCounter, tick.d.entity, "about to tick", tick.d)
       }
       /*
       when(doneReg) {
@@ -54,12 +54,12 @@ object Recipe {
     }
 
     if (compileOpts.debugWires) {
-      val goName = canonicalName("action", "go", action.d)
+      val goName = canonicalName(action.d.entity, "go", action.d)
       val namedGo = WireDefault(go).suggestName(goName)
       forceName(namedGo, goName)
       dontTouch(namedGo)
 
-      val doneName = canonicalName("action", "done", action.d)
+      val doneName = canonicalName(action.d.entity, "done", action.d)
       val namedDone = WireDefault(go).suggestName(doneName)
       forceName(namedDone, doneName)
       dontTouch(namedDone)
@@ -67,7 +67,7 @@ object Recipe {
 
     if (compileOpts.debugPrints.isDefined) {
       when(go) {
-        debugPrint(cycleCounter, "Action", "is active", action.d)
+        debugPrint(cycleCounter, action.d.entity, "is active", action.d)
       }
     }
 
@@ -81,12 +81,12 @@ object Recipe {
     }
 
     if (compileOpts.debugWires) {
-      val goName = canonicalName("block", "go", sequential.d)
+      val goName = canonicalName(sequential.d.entity, "go", sequential.d)
       val namedGo = WireDefault(go).suggestName(goName)
       //forceName(namedGo, goName)
       dontTouch(namedGo)
 
-      val doneName = canonicalName("block", "done", sequential.d)
+      val doneName = canonicalName(sequential.d.entity, "done", sequential.d)
       val namedDone = WireDefault(done).suggestName(doneName)
       //forceName(namedDone, doneName)
       dontTouch(namedDone)
@@ -94,10 +94,10 @@ object Recipe {
 
     if (compileOpts.debugPrints.isDefined && compileOpts.debugPrints.get.printBlocks) {
       when(go) {
-        debugPrint(cycleCounter, "Recipe block", "has started", sequential.d)
+        debugPrint(cycleCounter, sequential.d.entity, "has started", sequential.d)
       }
       when(done) {
-        debugPrint(cycleCounter, "Recipe block", "has finished", sequential.d)
+        debugPrint(cycleCounter, sequential.d.entity, "has finished", sequential.d)
       }
     }
 
@@ -112,12 +112,12 @@ object Recipe {
     val done = WireDefault(!w.cond && (bodyDone || go))
 
     if (compileOpts.debugWires) {
-      val goName = canonicalName("while", "go", w.d)
+      val goName = canonicalName(w.d.entity, "go", w.d)
       val namedGo = WireDefault(go).suggestName(goName)
       //forceName(namedGo, goName)
       dontTouch(namedGo)
 
-      val doneName = canonicalName("while", "done", w.d)
+      val doneName = canonicalName(w.d.entity, "done", w.d)
       val namedDone = WireDefault(done).suggestName(doneName)
       //forceName(namedDone, doneName)
       dontTouch(namedDone)
@@ -125,10 +125,10 @@ object Recipe {
 
     if (compileOpts.debugPrints.isDefined) {
       when(go) {
-        debugPrint(cycleCounter, "While loop", "has started", w.d)
+        debugPrint(cycleCounter, w.d.entity, "has started", w.d)
       }
       when(done) {
-        debugPrint(cycleCounter, "While loop", "has finished", w.d)
+        debugPrint(cycleCounter, w.d.entity, "has finished", w.d)
       }
     }
 
@@ -162,7 +162,7 @@ object Recipe {
   }
 }
 
-private[recipes] case class DebugInfo(line: Line, fileName: FileName, enclosing: Enclosing)
+private[recipes] case class DebugInfo(line: Line, fileName: FileName, enclosing: Enclosing, entity: String)
 
 case class DebugPrints(printBlocks: Boolean = false)
 case class CompileOpts(debugPrints: Option[DebugPrints], debugWires: Boolean)

@@ -12,12 +12,8 @@ class GCDRecipe extends Module {
     val outputGCD = Output(UInt(16.W))
     val outputValid = Output(Bool())
   })
-  //io.outputGCD := 1.U
-  //io.outputValid := 0.B
-
   val x = Reg(UInt())
   val y = Reg(UInt())
-  //io.outputValid := 0.U
   io.outputGCD := x
   io.outputValid := y === 0.U
 
@@ -38,24 +34,29 @@ class GCDRecipe extends Module {
       },
       tick
     ),
-    tick
-  ).compile(CompileOpts(Some(DebugPrints()), true))
+  ).compile(CompileOpts.debug)
 }
 
 class GCDRecipeSpec extends AnyFreeSpec with ChiselScalatestTester {
   "gcd recipe" in {
     test(new GCDRecipe()).withAnnotations(Seq(WriteVcdAnnotation)) { c =>
-      c.io.value1.poke(8.U)
-      c.io.value2.poke(4.U)
-      c.io.loadingValues.poke(1.U)
-      c.clock.step(1)
-      c.io.loadingValues.poke(0.U)
+      def evaluate(x: Int, y: Int): Unit = {
+        c.io.value1.poke(x.U)
+        c.io.value2.poke(y.U)
+        c.io.loadingValues.poke(1.B)
+        c.clock.step(1)
+        c.io.loadingValues.poke(0.B)
 
-      while(!c.io.outputValid.peek().litToBoolean) {
-        c.clock.step()
+        while(!c.io.outputValid.peek().litToBoolean) {
+          c.clock.step()
+        }
+        c.io.outputGCD.expect(BigInt(x).gcd(y))
       }
-      println(c.io.outputGCD.peek())
-      c.clock.step(5)
+
+      evaluate(8, 4)
+      evaluate(4, 8)
+      evaluate(128, 8)
+      evaluate(13, 20)
     }
   }
 }
