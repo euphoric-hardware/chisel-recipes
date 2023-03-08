@@ -29,7 +29,8 @@ package object recipes {
     whilePrim(cond)(body:_*)(line, fileName, enclosing, "whileLoop")
   }
 
-  def waitUntil(cond: Bool)(implicit line: Line, fileName: FileName, enclosing: Enclosing): Recipe = {
+  def waitUntil(cond: Bool, active: Bool = Wire(Bool()))(implicit line: Line, fileName: FileName, enclosing: Enclosing): Recipe = {
+    active := 0.B
     whilePrim(!cond)(Tick(DebugInfo(line, fileName, enclosing, "waitUntil_tick")))(line, fileName, enclosing, "waitUntil")
   }
 

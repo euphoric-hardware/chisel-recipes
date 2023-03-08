@@ -25,13 +25,54 @@ class DecoupledGCDRecipe(width: Int) extends Module {
   val yInitial    = Reg(UInt())
   val x           = Reg(UInt())
   val y           = Reg(UInt())
-  val busy        = RegInit(false.B)
+  //val busy        = RegInit(false.B)
   val resultValid = RegInit(false.B)
 
-  input.ready := !busy
+  //input.ready := !busy
+  input.ready := 0.B
   output.valid := resultValid
   output.bits := DontCare
 
+  //val resultValid = Wire(Bool())
+
+  forever (
+    waitUntil(input.valid),
+    action {
+      val bundle = input.deq()
+      x := bundle.value1
+      y := bundle.value2
+      xInitial := bundle.value1
+      yInitial := bundle.value2
+    },
+    tick,
+    whileLoop(x > 0.U && y > 0.U)( // TODO: not sure about this
+      action{
+        when(x > y) {
+          x := x - y
+        }.otherwise {
+          y := y - x
+        }
+      },
+      tick
+    ),
+    action {
+      output.bits.value1 := xInitial
+      output.bits.value2 := yInitial
+      when(x === 0.U) {
+        output.bits.gcd := y
+      }.otherwise {
+        output.bits.gcd := x
+      }
+      resultValid := true.B
+    },
+    //tick, // TODO: we may not need this
+    waitUntil(output.fire),
+    action {
+      resultValid := false.B
+    }
+  ).compile(CompileOpts.debug)
+
+  /*
   forever(
     ifThenElse(busy)(
       action({
@@ -70,6 +111,7 @@ class DecoupledGCDRecipe(width: Int) extends Module {
       )
     )
   ).compile(CompileOpts.debug)
+   */
 
   /*
   forever(
