@@ -36,4 +36,8 @@ package object recipes {
   def forever(r: Recipe*)(implicit line: Line, fileName: FileName, enclosing: Enclosing): Recipe = {
     whilePrim(true.B)(r:_*)(line, fileName, enclosing, "forever")
   }
+
+  def ifThenElse(cond: Bool)(t: Recipe)(e: Recipe)(implicit line: Line, fileName: FileName, enclosing: Enclosing): Recipe = {
+    IfThenElse(cond, t, e, DebugInfo(line, fileName, enclosing, "ifThenElse"))
+  }
 }

@@ -7,14 +7,14 @@ import sourcecode.{FileName, Line, Enclosing}
 object Recipe {
   type RecipeModule = Bool => Bool // go: Bool => done: Bool
 
-  def debugPrint(cycleCounter: UInt, entity: String, event: String, debugInfo: DebugInfo): Unit = {
+  private def debugPrint(cycleCounter: UInt, entity: String, event: String, debugInfo: DebugInfo): Unit = {
     chisel3.printf(cf"time=[$cycleCounter] [$entity] $event (${debugInfo.fileName.value}:${debugInfo.line.value}) ${debugInfo.enclosing.value}\n")
   }
 
-  def canonicalName(entity: String, event: String, debugInfo: DebugInfo): String = {
+  private def canonicalName(entity: String, event: String, debugInfo: DebugInfo): String = {
     val scalaFile = debugInfo.fileName.value.split('.').head
     val scalaFileLine = debugInfo.line.value
-    val name = s"${entity}_${event}_${scalaFile}_${scalaFileLine}"
+    val name = s"${entity}_${event}_${scalaFile}_$scalaFileLine"
     name
   }
 
@@ -135,6 +135,40 @@ object Recipe {
     done
   }
 
+  private[recipes] def ifThenElseModule(i: IfThenElse, cycleCounter: UInt, compileOpts: CompileOpts): RecipeModule = go => {
+    val done = RegInit(Bool(), 0.B)
+    when(i.cond) {
+      val execCircuit = compileNoPulse(i.thenCase, cycleCounter, compileOpts)
+      done := execCircuit(go)
+    }.otherwise {
+      val execCircuit = compileNoPulse(i.elseCase, cycleCounter, compileOpts)
+      done := execCircuit(go)
+    }
+
+    if (compileOpts.debugWires) {
+      val goName = canonicalName(i.d.entity, "go", i.d)
+      val namedGo = WireDefault(go).suggestName(goName)
+      //forceName(namedGo, goName)
+      dontTouch(namedGo)
+
+      val doneName = canonicalName(i.d.entity, "done", i.d)
+      val namedDone = WireDefault(done).suggestName(doneName)
+      //forceName(namedDone, doneName)
+      dontTouch(namedDone)
+    }
+
+    if (compileOpts.debugPrints.isDefined) {
+      when(go) {
+        debugPrint(cycleCounter, i.d.entity, "has started", i.d)
+      }
+      when(done) {
+        debugPrint(cycleCounter, i.d.entity, "has finished", i.d)
+      }
+    }
+
+    done
+  }
+
   private def compileNoPulse(r: Recipe, cycleCounter: UInt, compileOpts: CompileOpts): RecipeModule = {
     r match {
       case s @ Sequential(_, _) =>
@@ -145,6 +179,8 @@ object Recipe {
         actionModule(a, cycleCounter, compileOpts)
       case w @ While(_, _, _) =>
         whileModule(w, cycleCounter, compileOpts)
+      case i @ IfThenElse(_, _, _, _) =>
+        ifThenElseModule(i, cycleCounter, compileOpts)
     }
   }
 
@@ -168,7 +204,7 @@ case class DebugPrints(printBlocks: Boolean = false)
 case class CompileOpts(debugPrints: Option[DebugPrints], debugWires: Boolean)
 object CompileOpts {
   def default: CompileOpts = CompileOpts(None, debugWires = false)
-  def debug: CompileOpts = CompileOpts(Some(DebugPrints(false)), debugWires = true)
+  def debug: CompileOpts = CompileOpts(Some(DebugPrints()), debugWires = true)
   def debugAll: CompileOpts = CompileOpts(Some(DebugPrints(true)), debugWires = true)
 }
 
@@ -184,7 +220,7 @@ private[recipes] case class While(cond: Bool, loop: Recipe, d: DebugInfo) extend
 //case class Skip(next: Recipe) extends Recipe
 //case class Parallel(recipes: List[Recipe]) extends Recipe
 //case class When(cond: Bool, body: Recipe) extends Recipe
-//case class IfThenElse(cond: Bool, thenCase: Recipe, elseCase: Recipe) extends Recipe
+private[recipes] case class IfThenElse(cond: Bool, thenCase: Recipe, elseCase: Recipe, d: DebugInfo) extends Recipe(d)
 //case class Background(recipe: Recipe) extends Recipe
 //case class WaitUntil(cond: Bool) extends Recipe
 //case class Forever(body: Recipe) extends Recipe
