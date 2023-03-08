@@ -40,4 +40,8 @@ package object recipes {
   def ifThenElse(cond: Bool)(t: Recipe)(e: Recipe)(implicit line: Line, fileName: FileName, enclosing: Enclosing): Recipe = {
     IfThenElse(cond, t, e, DebugInfo(line, fileName, enclosing, "ifThenElse"))
   }
+
+  def whenPrim(cond: Bool)(body: Recipe*)(implicit line: Line, fileName: FileName, enclosing: Enclosing): Recipe = {
+    When(cond, recipe(body:_*), DebugInfo(line, fileName, enclosing, "when"))
+  }
 }

@@ -55,8 +55,8 @@ class DecoupledGCDRecipe(width: Int) extends Module {
             busy := false.B
             resultValid := false.B
           }
-        }}
-      )
+        }
+      })
     )(
       action(
         when(input.valid) {
@@ -70,6 +70,49 @@ class DecoupledGCDRecipe(width: Int) extends Module {
       )
     )
   ).compile(CompileOpts.debug)
+
+  /*
+  forever(
+    ifThenElse(busy)(
+      recipe(
+        action(
+          when(x > y) {
+            x := x - y
+          }.otherwise {
+            y := y - x
+          }
+        ),
+        ifThenElse(x === 0.U)(
+          action(output.bits.gcd := y)
+        )(
+          action(output.bits.gcd := x)
+        ),
+        action({
+          output.bits.value1 := xInitial
+          output.bits.value2 := yInitial
+          resultValid := true.B
+        }),
+        whenPrim(output.ready && resultValid)(
+          action({
+            busy := false.B
+            resultValid := false.B
+          })
+        )
+      )
+    )(
+      whenPrim(input.valid)(
+        action({
+          val bundle = input.deq()
+          x := bundle.value1
+          y := bundle.value2
+          xInitial := bundle.value1
+          yInitial := bundle.value2
+          busy := true.B
+        })
+      )
+    )
+  ).compile(CompileOpts.debug)
+  */
 }
 
 class DecoupledGCDRecipeSpec extends AnyFreeSpec with ChiselScalatestTester {

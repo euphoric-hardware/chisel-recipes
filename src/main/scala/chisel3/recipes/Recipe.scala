@@ -169,6 +169,37 @@ object Recipe {
     done
   }
 
+  private[recipes] def whenModule(w: When, cycleCounter: UInt, compileOpts: CompileOpts): RecipeModule = go => {
+    val done = RegInit(Bool(), 0.B)
+    when(w.cond) {
+      val execCircuit = compileNoPulse(w.body, cycleCounter, compileOpts)
+      done := execCircuit(go)
+    }
+
+    if (compileOpts.debugWires) {
+      val goName = canonicalName(w.d.entity, "go", w.d)
+      val namedGo = WireDefault(go).suggestName(goName)
+      //forceName(namedGo, goName)
+      dontTouch(namedGo)
+
+      val doneName = canonicalName(w.d.entity, "done", w.d)
+      val namedDone = WireDefault(done).suggestName(doneName)
+      //forceName(namedDone, doneName)
+      dontTouch(namedDone)
+    }
+
+    if (compileOpts.debugPrints.isDefined) {
+      when(go) {
+        debugPrint(cycleCounter, w.d.entity, "has started", w.d)
+      }
+      when(done) {
+        debugPrint(cycleCounter, w.d.entity, "has finished", w.d)
+      }
+    }
+
+    done
+  }
+
   private def compileNoPulse(r: Recipe, cycleCounter: UInt, compileOpts: CompileOpts): RecipeModule = {
     r match {
       case s @ Sequential(_, _) =>
@@ -181,6 +212,8 @@ object Recipe {
         whileModule(w, cycleCounter, compileOpts)
       case i @ IfThenElse(_, _, _, _) =>
         ifThenElseModule(i, cycleCounter, compileOpts)
+      case w @ When(_, _, _) =>
+        whenModule(w, cycleCounter, compileOpts)
     }
   }
 
@@ -219,7 +252,7 @@ private[recipes] case class Sequential(recipes: Seq[Recipe], d: DebugInfo) exten
 private[recipes] case class While(cond: Bool, loop: Recipe, d: DebugInfo) extends Recipe(d)
 //case class Skip(next: Recipe) extends Recipe
 //case class Parallel(recipes: List[Recipe]) extends Recipe
-//case class When(cond: Bool, body: Recipe) extends Recipe
+private[recipes] case class When(cond: Bool, body: Recipe, d: DebugInfo) extends Recipe(d)
 private[recipes] case class IfThenElse(cond: Bool, thenCase: Recipe, elseCase: Recipe, d: DebugInfo) extends Recipe(d)
 //case class Background(recipe: Recipe) extends Recipe
 //case class WaitUntil(cond: Bool) extends Recipe
