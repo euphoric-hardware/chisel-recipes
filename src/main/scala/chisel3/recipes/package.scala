@@ -21,17 +21,16 @@ package object recipes {
   }
    */
 
-  def whilePrim(cond: Bool)(body: Recipe*)(line: Line, fileName: FileName, enclosing: Enclosing, entity: String): Recipe = {
-    While(cond, recipe(body:_*)(line, fileName, enclosing), DebugInfo(line, fileName, enclosing, entity))
+  def whilePrim(cond: Bool, active: Bool = Wire(Bool()))(body: Recipe*)(line: Line, fileName: FileName, enclosing: Enclosing, entity: String): Recipe = {
+    While(cond, recipe(body:_*)(line, fileName, enclosing), active, DebugInfo(line, fileName, enclosing, entity))
   }
 
-  def whileLoop(cond: Bool)(body: Recipe*)(implicit line: Line, fileName: FileName, enclosing: Enclosing): Recipe = {
-    whilePrim(cond)(body:_*)(line, fileName, enclosing, "whileLoop")
+  def whileLoop(cond: Bool, active: Bool = Wire(Bool()))(body: Recipe*)(implicit line: Line, fileName: FileName, enclosing: Enclosing): Recipe = {
+    whilePrim(cond, active)(body:_*)(line, fileName, enclosing, "whileLoop")
   }
 
   def waitUntil(cond: Bool, active: Bool = Wire(Bool()))(implicit line: Line, fileName: FileName, enclosing: Enclosing): Recipe = {
-    active := 0.B
-    whilePrim(!cond)(Tick(DebugInfo(line, fileName, enclosing, "waitUntil_tick")))(line, fileName, enclosing, "waitUntil")
+    whilePrim(!cond, active)(Tick(DebugInfo(line, fileName, enclosing, "waitUntil_tick")))(line, fileName, enclosing, "waitUntil")
   }
 
   def forever(r: Recipe*)(implicit line: Line, fileName: FileName, enclosing: Enclosing): Recipe = {

@@ -21,7 +21,7 @@ class RecipeModuleSpec extends AnyFreeSpec with ChiselScalatestTester {
   "action circuit" in {
     test(new RecipeBase {
       val action = Recipe.actionModule(Action(() => io.x := 10.U, debugInfo), 0.U, CompileOpts.default)
-      io.done := action(io.go)._1
+      io.done := action(io.go)
     }) { c =>
       c.io.x.expect(0.U)
 
@@ -45,7 +45,7 @@ class RecipeModuleSpec extends AnyFreeSpec with ChiselScalatestTester {
   "tick circuit" in {
     test(new RecipeBase {
       val tick = Recipe.tickModule(Tick(debugInfo), 0.U, CompileOpts.default)
-      io.done := tick(io.go)._1
+      io.done := tick(io.go)
     }) { c =>
       c.io.done.expect(0.B)
 
@@ -70,7 +70,7 @@ class RecipeModuleSpec extends AnyFreeSpec with ChiselScalatestTester {
   "tick-only sequential circuit" in {
     test(new RecipeBase {
       val seq = Recipe.sequentialModule(Sequential(Seq(Tick(debugInfo), Tick(debugInfo)), debugInfo), 0.U, CompileOpts.default)
-      io.done := seq(io.go)._1
+      io.done := seq(io.go)
     }) { c =>
       c.io.done.expect(0.B)
 
@@ -94,7 +94,7 @@ class RecipeModuleSpec extends AnyFreeSpec with ChiselScalatestTester {
   "action-only sequential circuit" in {
     test(new RecipeBase {
       val seq = Recipe.sequentialModule(Sequential(Seq(Action(() => io.x := 10.U, debugInfo)), debugInfo), 0.U, CompileOpts.default)
-      io.done := seq(io.go)._1
+      io.done := seq(io.go)
     }) { c =>
       c.io.go.poke(1.B)
       c.io.done.expect(1.B)
@@ -114,7 +114,7 @@ class RecipeModuleSpec extends AnyFreeSpec with ChiselScalatestTester {
         Action(() => io.x := 8.U, debugInfo),
         Tick(debugInfo)
       ), debugInfo), 0.U, CompileOpts.default)
-      io.done := seq(io.go)._1
+      io.done := seq(io.go)
     }).withAnnotations(Seq(WriteVcdAnnotation)) { c =>
       c.io.go.poke(1.B)
       c.io.x.expect(10.U) // the first action is combinational
@@ -141,7 +141,7 @@ class RecipeModuleSpec extends AnyFreeSpec with ChiselScalatestTester {
             Tick(debugInfo)
           ), debugInfo), d=debugInfo),
         0.U, CompileOpts.default)
-      io.done := whileCircuit(io.go)._1
+      io.done := whileCircuit(io.go)
     }).withAnnotations(Seq(WriteVcdAnnotation)) { c =>
       c.io.go.poke(1.B)
       c.io.x.expect(0.U)

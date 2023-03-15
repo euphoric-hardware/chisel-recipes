@@ -14,8 +14,9 @@ class GCDRecipe extends Module {
   })
   val x = Reg(UInt())
   val y = Reg(UInt())
+  val wireValid = Wire(Bool())
   io.outputGCD := x
-  io.outputValid := y === 0.U
+  io.outputValid := !wireValid
 
   forever(
     waitUntil(io.loadingValues === true.B),
@@ -24,7 +25,7 @@ class GCDRecipe extends Module {
       y := io.value2
     },
     tick,
-    whileLoop(y > 0.U)(
+    whileLoop(y > 0.U, wireValid)(
       action {
         when(x > y) {
           x := x - y

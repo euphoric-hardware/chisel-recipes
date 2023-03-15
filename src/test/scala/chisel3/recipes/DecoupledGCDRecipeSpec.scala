@@ -27,12 +27,9 @@ class DecoupledGCDRecipe(width: Int) extends Module {
   val y           = Reg(UInt())
   val resultValid = RegInit(false.B)
 
-  //input.ready := !busy
   input.ready := 0.B
   output.valid := resultValid
   output.bits := DontCare
-
-  //val resultValid = Wire(Bool())
 
   forever (
     waitUntil(input.valid),
@@ -62,12 +59,8 @@ class DecoupledGCDRecipe(width: Int) extends Module {
       }.otherwise {
         output.bits.gcd := x
       }
-      resultValid := true.B
     },
-    waitUntil(output.fire),
-    action {
-      resultValid := false.B
-    }
+    waitUntil(output.fire, resultValid),
   ).compile(CompileOpts.debug)
 }
 
