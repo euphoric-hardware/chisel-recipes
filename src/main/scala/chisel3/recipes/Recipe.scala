@@ -5,7 +5,7 @@ import chisel3.util.experimental.forceName
 import sourcecode.{FileName, Line, Enclosing}
 
 object Recipe {
-  type RecipeModule = Bool => Bool // go: Bool => done: Bool
+  type RecipeModule = Bool => (Bool, Bool) // go: Bool => done: Bool
 
   private def debugPrint(cycleCounter: UInt, entity: String, event: String, debugInfo: DebugInfo): Unit = {
     chisel3.printf(cf"time=[$cycleCounter] [$entity] $event (${debugInfo.fileName.value}:${debugInfo.line.value}) ${debugInfo.enclosing.value}\n")
@@ -45,13 +45,16 @@ object Recipe {
        */
     }
 
-    doneReg
+    (doneReg, 0.B)
   }
 
   private[recipes] def actionModule(action: Action, cycleCounter: UInt, compileOpts: CompileOpts): RecipeModule = go => {
+    val activeReg = RegInit(Bool(), 0.B)
     when(go) {
+      activeReg := 1.B
       action.a()
     }
+    activeReg := 0.B
 
     if (compileOpts.debugWires) {
       val goName = canonicalName(action.d.entity, "go", action.d)
@@ -71,14 +74,16 @@ object Recipe {
       }
     }
 
-    go
+    (go, activeReg)
   }
 
   private[recipes] def sequentialModule(sequential: Sequential, cycleCounter: UInt, compileOpts: CompileOpts): RecipeModule = go => {
     val recipeMods: Seq[RecipeModule] = sequential.recipes.map(r => compileNoPulse(r, cycleCounter, compileOpts))
+    val activeReg = RegInit(Bool(), 1.B)
     val done = recipeMods.foldLeft(go) { case (g, r) =>
-      r(g)
+      r(g)._1
     }
+    activeReg := 0.B
 
     if (compileOpts.debugWires) {
       val goName = canonicalName(sequential.d.entity, "go", sequential.d)
@@ -101,13 +106,13 @@ object Recipe {
       }
     }
 
-    done
+    (done, activeReg)
   }
 
   private[recipes] def whileModule(w: While, cycleCounter: UInt, compileOpts: CompileOpts): RecipeModule = go => {
     val bodyCircuit = compileNoPulse(w.loop, cycleCounter, compileOpts)
     val bodyGo = Wire(Bool())
-    val bodyDone = bodyCircuit(bodyGo)
+    val (bodyDone, bodyActive) = bodyCircuit(bodyGo)
     bodyGo := w.cond && (go || bodyDone)
     val done = WireDefault(!w.cond && (bodyDone || go))
 
@@ -132,17 +137,22 @@ object Recipe {
       }
     }
 
-    done
+    (done, bodyActive)
   }
 
   private[recipes] def ifThenElseModule(i: IfThenElse, cycleCounter: UInt, compileOpts: CompileOpts): RecipeModule = go => {
+    val activeReg = RegInit(Bool(), 1.B)
     val done = RegInit(Bool(), 0.B)
     when(i.cond) {
       val execCircuit = compileNoPulse(i.thenCase, cycleCounter, compileOpts)
-      done := execCircuit(go)
+      val (circuitDone, circuitActive) = execCircuit(go)
+      done := circuitDone
+      activeReg := circuitActive
     }.otherwise {
       val execCircuit = compileNoPulse(i.elseCase, cycleCounter, compileOpts)
-      done := execCircuit(go)
+      val (circuitDone, circuitActive) = execCircuit(go)
+      done := circuitDone
+      activeReg := circuitActive
     }
 
     if (compileOpts.debugWires) {
@@ -166,14 +176,17 @@ object Recipe {
       }
     }
 
-    done
+    (done, activeReg)
   }
 
   private[recipes] def whenModule(w: When, cycleCounter: UInt, compileOpts: CompileOpts): RecipeModule = go => {
+    val activeReg = RegInit(Bool(), 1.B)
     val done = RegInit(Bool(), 0.B)
     when(w.cond) {
       val execCircuit = compileNoPulse(w.body, cycleCounter, compileOpts)
-      done := execCircuit(go)
+      val (circuitDone, circuitActive) = execCircuit(go)
+      done := circuitDone
+      activeReg := circuitActive
     }
 
     if (compileOpts.debugWires) {
@@ -197,7 +210,7 @@ object Recipe {
       }
     }
 
-    done
+    (done, activeReg)
   }
 
   private def compileNoPulse(r: Recipe, cycleCounter: UInt, compileOpts: CompileOpts): RecipeModule = {
@@ -227,7 +240,7 @@ object Recipe {
     val recMod = compileNoPulse(r, cycleCounter, compileOpts)
     val pulseReg = RegInit(Bool(), 0.B)
     pulseReg := 1.B
-    recMod(pulseReg === 0.U)
+    recMod(pulseReg === 0.U)._1
   }
 }
 
