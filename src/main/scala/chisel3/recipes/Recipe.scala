@@ -105,11 +105,18 @@ object Recipe {
   }
 
   private[recipes] def whileModule(w: While, cycleCounter: UInt, compileOpts: CompileOpts): RecipeModule = go => {
+    val active = RegInit(Bool(), 1.B)
     val bodyCircuit = compileNoPulse(w.loop, cycleCounter, compileOpts)
     val bodyGo = Wire(Bool())
     val bodyDone = bodyCircuit(bodyGo)
     bodyGo := w.cond && (go || bodyDone)
     val done = WireDefault(!w.cond && (bodyDone || go))
+
+    when (bodyDone && !bodyGo) {
+      active := 0.B
+    }.otherwise {
+      active := 1.B
+    }
 
     if (compileOpts.debugWires) {
       val goName = canonicalName(w.d.entity, "go", w.d)
@@ -132,6 +139,7 @@ object Recipe {
       }
     }
 
+//    w.active := active
     w.active := bodyGo
     done
   }

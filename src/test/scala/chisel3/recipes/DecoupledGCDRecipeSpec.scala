@@ -1,9 +1,13 @@
 package chisel3.recipes
 
 import chisel3._
-import chiseltest._
-import chisel3.util.Decoupled
 import chisel3.experimental.BundleLiterals._
+import chisel3.util.Decoupled
+import chiseltest._
+import chiseltest.experimental.observe
+import chiseltest.formal._
+import gcd.DecoupledGcd
+import org.scalatest.flatspec.AnyFlatSpec
 import org.scalatest.freespec.AnyFreeSpec
 
 class GcdInputBundle(val w: Int) extends Bundle {
@@ -25,7 +29,7 @@ class DecoupledGCDRecipe(width: Int) extends Module {
   val yInitial    = Reg(UInt())
   val x           = Reg(UInt())
   val y           = Reg(UInt())
-  val resultValid = RegInit(false.B)
+  val resultValid = RegInit(Bool(), 0.B)
 
   input.ready := 0.B
   output.valid := resultValid
@@ -93,4 +97,70 @@ class DecoupledGCDRecipeSpec extends AnyFreeSpec with ChiselScalatestTester {
       }.join()
     }
   }
+
+  class DecoupledGcdFormalSpec(handGCD: => DecoupledGcd, recipeGCD: => DecoupledGCDRecipe) extends Module {
+    // create an instance of our DUT and expose its I/O
+    val handDUT = Module(handGCD)
+    val recipeDUT = Module(recipeGCD)
+
+    val input = IO(chiselTypeOf(handDUT.input))
+    input <> handDUT.input
+    input <> recipeDUT.input
+
+    val handOutput = IO(chiselTypeOf(handDUT.output))
+    handOutput <> handDUT.output
+    val recipeOutput = IO(chiselTypeOf(recipeDUT.output))
+    recipeOutput <> recipeDUT.output
+
+    // create a cross module binding to inspect internal state
+    val handBusy = observe(handDUT.busy)
+    val recipeBusy = observe(!recipeDUT.resultValid)
+
+    // do not accept new inputs while busy
+    when(handBusy || recipeBusy) {
+      assert(!input.fire)
+    }
+
+    // only release outputs when busy
+    when(handOutput.fire) {
+      assert(handOutput.fire)
+    }
+
+    when(recipeOutput.fire) {
+      assert(recipeOutput.fire)
+    }
+
+    // when there was no transactions, busy should not change
+    when(past(!input.fire && !handOutput.fire)) {
+      assert(stable(handBusy))
+    }
+
+    when(past(!input.fire && !recipeOutput.fire)) {
+      assert(stable(recipeBusy))
+    }
+
+    // when busy changed from 0 to 1, an input was accepted
+    when(rose(handBusy) || rose(recipeBusy)) {
+      assert(past(input.fire))
+    }
+
+    // when busy changed from 1 to 0, an output was transmitted
+    when(fell(handBusy)) {
+      assert(past(handOutput.fire))
+    }
+
+    when(fell(recipeBusy)) {
+      assert(past(recipeOutput.fire))
+    }
+  }
+  class FormalGcdSpec extends AnyFlatSpec with ChiselScalatestTester with Formal {
+    "GCD" should "pass" in {
+      verify(new DecoupledGcdFormalSpec(
+        new DecoupledGcd(4),
+        new DecoupledGCDRecipe(4)
+      ), Seq(BoundedCheck(20)))
+    }
+  }
+
+
 }
