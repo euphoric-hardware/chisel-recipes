@@ -172,17 +172,13 @@ class RecipeSpec extends AnyFreeSpec with ChiselScalatestTester {
         },
         tick,
         tick,
-        tick,
-        tick,
       ).compile(CompileOpts.debugAll)
     }).withAnnotations(Seq(WriteVcdAnnotation)) { dut =>
       dut.io.out.expect(false)
 
-      for (_ <- 0 until 5) {
-        for (_ <- 0 until 4) {
-          dut.clock.step(1)
-          dut.io.out.expect(true)
-        }
+      for (_ <- 0 until 10) {
+        dut.clock.step(1)
+        dut.io.out.expect(true)
       }
     }
   }
