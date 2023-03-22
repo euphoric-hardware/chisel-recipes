@@ -33,6 +33,11 @@ package object recipes {
     whilePrim(!cond, active)(Tick(DebugInfo(line, fileName, enclosing, "waitUntil_tick")))(line, fileName, enclosing, "waitUntil")
   }
 
+  def doWhile(cond: Bool, active: Bool = Wire(Bool()))(body: Recipe*)(implicit line: Line, fileName: FileName, enclosing: Enclosing): Recipe = {
+    recipe(body:_*)
+    whilePrim(cond, active)(body:_*)(line, fileName, enclosing, "doWhile")
+  }
+
   def forever(r: Recipe*)(implicit line: Line, fileName: FileName, enclosing: Enclosing): Recipe = {
     whilePrim(true.B)(r:_*)(line, fileName, enclosing, "forever")
   }
