@@ -9,6 +9,7 @@ import chiseltest.formal._
 import gcd.DecoupledGcd
 import org.scalatest.flatspec.AnyFlatSpec
 import org.scalatest.freespec.AnyFreeSpec
+import chisel3.stage.PrintFullStackTraceAnnotation
 
 class GcdInputBundle(val w: Int) extends Bundle {
   val value1 = UInt(w.W)
@@ -98,69 +99,89 @@ class DecoupledGCDRecipeSpec extends AnyFreeSpec with ChiselScalatestTester {
     }
   }
 
+}
+
+class FormalGcdSpec extends AnyFlatSpec with ChiselScalatestTester with Formal {
+
   class DecoupledGcdFormalSpec(handGCD: => DecoupledGcd, recipeGCD: => DecoupledGCDRecipe) extends Module {
     // create an instance of our DUT and expose its I/O
     val handDUT = Module(handGCD)
     val recipeDUT = Module(recipeGCD)
 
     val input = IO(chiselTypeOf(handDUT.input))
-    input <> handDUT.input
-    input <> recipeDUT.input
+    input.ready := DontCare
+    // input.valid, input.data - input (to this module)
+    // input.ready - output (of this module)
+    handDUT.input.valid := input.valid
+    handDUT.input.bits := input.bits
+    recipeDUT.input.valid := input.valid
+    recipeDUT.input.bits := input.bits
+    chisel3.assert(handDUT.input.ready === recipeDUT.input.ready)
 
-    val handOutput = IO(chiselTypeOf(handDUT.output))
-    handOutput <> handDUT.output
-    val recipeOutput = IO(chiselTypeOf(recipeDUT.output))
-    recipeOutput <> recipeDUT.output
+    //input <> handDUT.input
+    //input <> recipeDUT.input
 
+    //val handOutput = IO(chiselTypeOf(handDUT.output))
+    //handOutput <> handDUT.output
+    //val recipeOutput = IO(chiselTypeOf(recipeDUT.output))
+    //recipeOutput <> recipeDUT.output
+    chisel3.assert(handDUT.output.bits.value1 === recipeDUT.output.bits.value1)
+    chisel3.assert(handDUT.output.bits.value2 === recipeDUT.output.bits.value2)
+    chisel3.assert(handDUT.output.bits.gcd === recipeDUT.output.bits.gcd)
+    chisel3.assert(handDUT.output.valid === recipeDUT.output.valid)
+
+    val output_ready = IO(Input(Bool()))
+    handDUT.output.ready := output_ready
+    recipeDUT.output.ready := output_ready
+
+    /*
     // create a cross module binding to inspect internal state
     val handBusy = observe(handDUT.busy)
     val recipeBusy = observe(!recipeDUT.resultValid)
 
     // do not accept new inputs while busy
     when(handBusy || recipeBusy) {
-      assert(!input.fire)
+      chisel3.assert(!input.fire)
     }
 
     // only release outputs when busy
     when(handOutput.fire) {
-      assert(handOutput.fire)
+      chisel3.assert(handOutput.fire)
     }
 
     when(recipeOutput.fire) {
-      assert(recipeOutput.fire)
+      chisel3.assert(recipeOutput.fire)
     }
 
     // when there was no transactions, busy should not change
     when(past(!input.fire && !handOutput.fire)) {
-      assert(stable(handBusy))
+      chisel3.assert(stable(handBusy))
     }
 
     when(past(!input.fire && !recipeOutput.fire)) {
-      assert(stable(recipeBusy))
+      chisel3.assert(stable(recipeBusy))
     }
 
     // when busy changed from 0 to 1, an input was accepted
     when(rose(handBusy) || rose(recipeBusy)) {
-      assert(past(input.fire))
+      chisel3.assert(past(input.fire))
     }
 
     // when busy changed from 1 to 0, an output was transmitted
     when(fell(handBusy)) {
-      assert(past(handOutput.fire))
+      chisel3.assert(past(handOutput.fire))
     }
 
     when(fell(recipeBusy)) {
-      assert(past(recipeOutput.fire))
+      chisel3.assert(past(recipeOutput.fire))
     }
-  }
-  class FormalGcdSpec extends AnyFlatSpec with ChiselScalatestTester with Formal {
-    "GCD" should "pass" in {
-      verify(new DecoupledGcdFormalSpec(
-        new DecoupledGcd(4),
-        new DecoupledGCDRecipe(4)
-      ), Seq(BoundedCheck(20)))
-    }
+    */
   }
 
-
+  "GCD" should "pass" in {
+    verify(new DecoupledGcdFormalSpec(
+      new DecoupledGcd(4),
+      new DecoupledGCDRecipe(4)
+    ), Seq(BoundedCheck(20), PrintFullStackTraceAnnotation))
+  }
 }
