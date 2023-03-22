@@ -21,7 +21,7 @@ package object recipes {
   }
    */
 
-  def whilePrim(cond: Bool, active: Bool = Wire(Bool()))(body: Recipe*)(line: Line, fileName: FileName, enclosing: Enclosing, entity: String): Recipe = {
+  private def whilePrim(cond: Bool, active: Bool = Wire(Bool()))(body: Recipe*)(line: Line, fileName: FileName, enclosing: Enclosing, entity: String): Recipe = {
     While(cond, recipe(body:_*)(line, fileName, enclosing), active, DebugInfo(line, fileName, enclosing, entity))
   }
 
