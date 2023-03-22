@@ -132,7 +132,62 @@ class RecipeSpec extends AnyFreeSpec with ChiselScalatestTester {
     }
   }
 
-/*
+  abstract class ActiveSignalExample extends Module {
+    val io = IO(new Bundle {
+      val out = Output(Bool())
+    })
+  }
+
+  "active signal with single-cycle loop" in {
+    test(new ActiveSignalExample {
+      val activeSig = RegInit(Bool(), 0.B)
+      io.out := activeSig
+
+      val r = RegInit(UInt(8.W), 0.U)
+      whileLoop(r < 5.U, activeSig)(
+        action {
+          r := r + 1.U
+        },
+        tick
+      ).compile(CompileOpts.debugAll)
+    }).withAnnotations(Seq(WriteVcdAnnotation)) { dut =>
+      dut.io.out.expect(false)
+
+      for (_ <- 0 until 5) {
+        dut.clock.step(1)
+        dut.io.out.expect(true)
+      }
+    }
+  }
+
+  "active signal with multi-cycle loop" in {
+    test(new ActiveSignalExample {
+      val activeSig = RegInit(Bool(), 0.B)
+      io.out := activeSig
+
+      val r = RegInit(UInt(8.W), 0.U)
+      whileLoop(r < 5.U, activeSig)(
+        action {
+          r := r + 1.U
+        },
+        tick,
+        tick,
+        tick,
+        tick,
+      ).compile(CompileOpts.debugAll)
+    }).withAnnotations(Seq(WriteVcdAnnotation)) { dut =>
+      dut.io.out.expect(false)
+
+      for (_ <- 0 until 5) {
+        for (_ <- 0 until 4) {
+          dut.clock.step(1)
+          dut.io.out.expect(true)
+        }
+      }
+    }
+  }
+
+  /*
   "Basic if-then-else statement" in {
     class ITEExample extends Module {
       val io = IO(new Bundle {
