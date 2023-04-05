@@ -112,7 +112,8 @@ object Recipe {
     bodyGo := w.cond && (go || bodyDone)
     val done = WireDefault(!w.cond && (bodyDone || go))
 
-    when (bodyDone && !bodyGo) {
+    // TODO: dead zone when bodyCircuit is running but not done
+    when (bodyDone && !bodyGo && active) {
       active := 0.B
     }.otherwise {
       active := 1.B

@@ -140,8 +140,6 @@ class RecipeSpec extends AnyFreeSpec with ChiselScalatestTester {
 
   "active signal with single-cycle loop" in {
     test(new ActiveSignalExample {
-      //val activeSig = RegInit(Bool(), 0.B)
-      //io.out := activeSig
 
       val r = RegInit(UInt(8.W), 0.U)
       whileLoop(r < 5.U, io.out)(
@@ -153,11 +151,11 @@ class RecipeSpec extends AnyFreeSpec with ChiselScalatestTester {
     }).withAnnotations(Seq(WriteVcdAnnotation)) { dut =>
       dut.io.out.expect(true)
 
-      for (_ <- 0 to 4) {
+      for (_ <- 0 until 4) {
         dut.clock.step(1)
         dut.io.out.expect(true)
       }
-      //dut.clock.step(1)
+      dut.clock.step(1)
       dut.io.out.expect(false)
       dut.clock.step(1)
       dut.io.out.expect(false)
@@ -166,11 +164,9 @@ class RecipeSpec extends AnyFreeSpec with ChiselScalatestTester {
 
   "active signal with multi-cycle loop" in {
     test(new ActiveSignalExample {
-      val activeSig = RegInit(Bool(), 0.B)
-      io.out := activeSig
 
       val r = RegInit(UInt(8.W), 0.U)
-      whileLoop(r < 5.U, activeSig)(
+      whileLoop(r < 5.U, io.out)(
         action {
           r := r + 1.U
         },
@@ -178,9 +174,9 @@ class RecipeSpec extends AnyFreeSpec with ChiselScalatestTester {
         tick,
       ).compile(CompileOpts.debugAll)
     }).withAnnotations(Seq(WriteVcdAnnotation)) { dut =>
-      dut.io.out.expect(false)
+      dut.io.out.expect(true)
 
-      for (_ <- 0 until 10) {
+      for (_ <- 0 until 8) {
         dut.clock.step(1)
         dut.io.out.expect(true)
       }
