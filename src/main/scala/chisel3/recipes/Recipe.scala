@@ -5,7 +5,7 @@ import chisel3.util.experimental.forceName
 import sourcecode.{FileName, Line, Enclosing}
 
 object Recipe {
-  private type RecipeModule = Bool => Bool // go: Bool => done: Bool
+  private type RecipeModule = Bool => (Bool, Bool) // go: Bool => (done: Bool, active: Bool)
 
   private def debugPrint(cycleCounter: UInt, entity: String, event: String, debugInfo: DebugInfo): Unit = {
     chisel3.printf(cf"time=[$cycleCounter] [$entity] $event (${debugInfo.fileName.value}:${debugInfo.line.value}) ${debugInfo.enclosing.value}\n")
@@ -45,7 +45,7 @@ object Recipe {
        */
     }
 
-    doneReg
+    doneReg, go
   }
 
   private[recipes] def actionModule(action: Action, cycleCounter: UInt, compileOpts: CompileOpts): RecipeModule = go => {
@@ -71,7 +71,7 @@ object Recipe {
       }
     }
 
-    go
+    go, go
   }
 
   private[recipes] def sequentialModule(sequential: Sequential, cycleCounter: UInt, compileOpts: CompileOpts): RecipeModule = go => {

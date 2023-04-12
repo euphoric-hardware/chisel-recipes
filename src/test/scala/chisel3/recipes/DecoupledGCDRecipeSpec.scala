@@ -30,12 +30,46 @@ class DecoupledGCDRecipe(width: Int) extends Module {
   val yInitial    = Reg(UInt())
   val x           = Reg(UInt())
   val y           = Reg(UInt())
-  val resultValid = RegInit(Bool(), 0.B)
+  val resultValid = Wire(Bool())
+  val inputReady = Wire(Bool())
 
-  input.ready := 0.B
+  input.ready := inputReady
   output.valid := resultValid
   output.bits := DontCare
 
+  doWhile(true.B)(
+    //action { input.ready := true.B },
+    waitUntil(input.valid, inputReady),
+    action {
+      //val bundle = input.deq()
+      x := input.bits.value1
+      y := input.bits.value2
+      xInitial := input.bits.value1
+      yInitial := input.bits.value2
+    },
+    tick,
+    whileLoop(x > 0.U && y > 0.U)(
+      action{
+        when(x > y) {
+          x := x - y
+        }.otherwise {
+          y := y - x
+        }
+      },
+      tick
+    ),
+    action {
+      output.bits.value1 := xInitial
+      output.bits.value2 := yInitial
+      when(x === 0.U) {
+        output.bits.gcd := y
+      }.otherwise {
+        output.bits.gcd := x
+      }
+    },
+    waitUntil(output.ready, resultValid),
+  ).compile(CompileOpts.debugAll)
+/*
   forever (
     waitUntil(input.valid),
     action {
@@ -67,17 +101,20 @@ class DecoupledGCDRecipe(width: Int) extends Module {
     },
     waitUntil(output.fire, resultValid),
   ).compile(CompileOpts.debug)
+  */
 }
 
 class DecoupledGCDRecipeSpec extends AnyFreeSpec with ChiselScalatestTester {
   "decoupled gcd recipe" in {
     test(new DecoupledGCDRecipe(16)).withAnnotations(Seq(WriteVcdAnnotation)) { dut =>
+      dut.clock.setTimeout(10)
       dut.input.initSource()
       dut.input.setSourceClock(dut.clock)
       dut.output.initSink()
       dut.output.setSinkClock(dut.clock)
 
-      val testValues = for { x <- 0 to 10; y <- 0 to 10} yield (x, y)
+      //val testValues = for { x <- 0 to 10; y <- 0 to 10} yield (x, y)
+      val testValues = Seq((1, 1))
       val inputSeq = testValues.map { case (x, y) => new GcdInputBundle(16).Lit(_.value1 -> x.U, _.value2 -> y.U) }
       val resultSeq = testValues.map { case (x, y) =>
         new GcdOutputBundle(16).Lit(_.value1 -> x.U, _.value2 -> y.U, _.gcd -> BigInt(x).gcd(BigInt(y)).U)

@@ -183,6 +183,26 @@ class RecipeSpec extends AnyFreeSpec with ChiselScalatestTester {
     }
   }
 
+  "simple doWhile" in {
+    test(new ActiveSignalExample {
+      val r = RegInit(UInt(8.W), 0.U)
+      doWhile(r < 5.U, io.out)(
+        action {
+          r := r + 1.U
+        },
+        tick,
+        tick,
+      ).compile(CompileOpts.default)
+    }).withAnnotations(Seq(WriteVcdAnnotation)) { dut =>
+      dut.io.out.expect(true)
+
+      for (_ <- 0 until 10) {
+        dut.clock.step(1)
+        dut.io.out.expect(true)
+      }
+    }
+  }
+
   /*
   "Basic if-then-else statement" in {
     class ITEExample extends Module {
