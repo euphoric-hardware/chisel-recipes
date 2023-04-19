@@ -29,8 +29,8 @@ package object recipes {
 
   def doWhile(body: Recipe*)(cond: Bool, active: Bool = Wire(Bool()))(implicit line: Line, fileName: FileName, enclosing: Enclosing): Recipe = {
     recipe (
-      recipe(body:_*)(active),
-      whilePrim(cond, active)(body:_*)(line, fileName, enclosing, "doWhile")
+      recipe(body:_*)(),
+      whilePrim(cond)(body:_*)(line, fileName, enclosing, "doWhile")
     )(active)
   }
 

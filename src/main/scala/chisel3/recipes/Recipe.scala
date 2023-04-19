@@ -111,7 +111,7 @@ object Recipe {
     val active = RegInit(Bool(), 0.B)
     val bodyCircuit = compileNoPulse(w.loop, cycleCounter, compileOpts)
     val bodyGo = Wire(Bool())
-    val bodyDone = bodyCircuit(bodyGo)._2
+    val bodyDone = bodyCircuit(bodyGo)._1
     bodyGo := w.cond && (go || bodyDone)
     val done = WireDefault(!w.cond && (bodyDone || go))
 

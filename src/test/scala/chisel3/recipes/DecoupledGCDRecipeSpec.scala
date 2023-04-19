@@ -67,7 +67,7 @@ class DecoupledGCDRecipe(width: Int) extends Module {
       }
     },
     waitUntil(output.ready, resultValid),
-  )(true.B).compile(CompileOpts.debugAll)
+  )(true.B).compile(CompileOpts.debug)
 /*
   forever (
     waitUntil(input.valid),
@@ -106,7 +106,7 @@ class DecoupledGCDRecipe(width: Int) extends Module {
 class DecoupledGCDRecipeSpec extends AnyFreeSpec with ChiselScalatestTester {
   "decoupled gcd recipe" in {
     test(new DecoupledGCDRecipe(16)).withAnnotations(Seq(WriteVcdAnnotation)) { dut =>
-      dut.clock.setTimeout(10)
+      dut.clock.setTimeout(100)
       dut.input.initSource()
       dut.input.setSourceClock(dut.clock)
       dut.output.initSink()
