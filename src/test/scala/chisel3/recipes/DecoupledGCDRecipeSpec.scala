@@ -4,7 +4,6 @@ import chisel3._
 import chisel3.experimental.BundleLiterals._
 import chisel3.util.Decoupled
 import chiseltest._
-import chiseltest.experimental.observe
 import chiseltest.formal._
 import gcd.DecoupledGcd
 import org.scalatest.flatspec.AnyFlatSpec

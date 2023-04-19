@@ -45,6 +45,7 @@ object Recipe {
        */
     }
 
+    tick.active := go
     (doneReg, go)
   }
 
@@ -71,6 +72,7 @@ object Recipe {
       }
     }
 
+    action.active := go
     (go, go)
   }
 
@@ -101,7 +103,8 @@ object Recipe {
       }
     }
 
-    (done, go || !done)
+    sequential.active := !done
+    (done, !done)
   }
 
   private[recipes] def whileModule(w: While, cycleCounter: UInt, compileOpts: CompileOpts): RecipeModule = go => {
@@ -139,6 +142,7 @@ object Recipe {
       }
     }
 
+    w.active := Mux(done, 0.B, active || (go && !done))
     (done, Mux(done, 0.B, active || (go && !done)))
   }
 
@@ -258,7 +262,7 @@ object CompileOpts {
 
 private[recipes] sealed abstract class Recipe(active: Bool) {
   def compile(compileOpts: CompileOpts = CompileOpts.default): Unit = {
-    active := Recipe.compile(this, compileOpts)._2
+    this.active := Recipe.compile(this, compileOpts)._2
   }
 }
 private[recipes] case class Tick(d: DebugInfo, active: Bool = Wire(Bool())) extends Recipe(active)
