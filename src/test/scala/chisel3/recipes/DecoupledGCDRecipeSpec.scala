@@ -37,7 +37,7 @@ class DecoupledGCDRecipe(width: Int) extends Module {
   output.valid := resultValid
   output.bits := DontCare
 
-  doWhile(true.B)(
+  doWhile(
     //action { input.ready := true.B },
     waitUntil(input.valid, inputReady),
     action {
@@ -47,16 +47,16 @@ class DecoupledGCDRecipe(width: Int) extends Module {
       xInitial := input.bits.value1
       yInitial := input.bits.value2
     },
-    tick,
+    tick(),
     whileLoop(x > 0.U && y > 0.U)(
-      action{
+      action {
         when(x > y) {
           x := x - y
         }.otherwise {
           y := y - x
         }
       },
-      tick
+      tick()
     ),
     action {
       output.bits.value1 := xInitial
@@ -68,7 +68,7 @@ class DecoupledGCDRecipe(width: Int) extends Module {
       }
     },
     waitUntil(output.ready, resultValid),
-  ).compile(CompileOpts.debugAll)
+  )(true.B).compile(CompileOpts.debugAll)
 /*
   forever (
     waitUntil(input.valid),

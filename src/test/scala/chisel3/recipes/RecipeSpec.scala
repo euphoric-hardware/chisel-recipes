@@ -16,11 +16,11 @@ class RecipeSpec extends AnyFreeSpec with ChiselScalatestTester {
       io.out := 100.U
       recipe (
         action { io.out := 10.U },
-        tick,
+        tick(),
         action { io.out := 0.U },
-        tick,
+        tick(),
         action { io.out := 20.U }
-      ).compile(CompileOpts.debugAll)
+      )().compile(CompileOpts.debugAll)
     }).withAnnotations(Seq(WriteVcdAnnotation)) { dut =>
       dut.io.out.expect(10.U)
       dut.clock.step()
@@ -38,14 +38,14 @@ class RecipeSpec extends AnyFreeSpec with ChiselScalatestTester {
         recipe (
           recipe (
             action { io.out := 10.U },
-            tick
-          ),
+            tick()
+          )(),
           recipe (
             action { io.out := 0.U },
-            tick
-          ),
+            tick()
+          )(),
           action { io.out := 20.U }
-        ).compile(CompileOpts.debugAll)
+        )().compile(CompileOpts.debugAll)
     }).withAnnotations(Seq(WriteVcdAnnotation)) { dut =>
       dut.io.out.expect(10.U)
       dut.clock.step()
@@ -64,7 +64,7 @@ class RecipeSpec extends AnyFreeSpec with ChiselScalatestTester {
 
       whileLoop(r < 10.U)(
         action { r := r + 1.U },
-        tick
+        tick()
       ).compile(CompileOpts.debug)
     }).withAnnotations(Seq(WriteVcdAnnotation)) { dut =>
       for (i <- 0 until 10) {
@@ -84,10 +84,10 @@ class RecipeSpec extends AnyFreeSpec with ChiselScalatestTester {
       recipe (
         whileLoop(r < 10.U)(
           action { r := r + 1.U },
-          tick
+          tick()
         ),
         action { io.out := 2.U * r }
-      ).compile(CompileOpts.debug)
+      )().compile(CompileOpts.debug)
     }).withAnnotations(Seq(WriteVcdAnnotation)) { dut =>
       for (i <- 0 until 10) {
         dut.io.out.expect(i.U)
@@ -105,10 +105,10 @@ class RecipeSpec extends AnyFreeSpec with ChiselScalatestTester {
       val w = WireDefault(0.B)
       recipe (
         whileLoop(w)( // condition is immediately false
-          tick // shouldn't execute
+          tick() // shouldn't execute
         ),
         action { io.out := 100.U } // should get here combinationally
-      ).compile(CompileOpts.debug)
+      )().compile(CompileOpts.debug)
     }) { dut =>
       dut.io.out.expect(100.U)
       dut.clock.step(1)
@@ -123,7 +123,7 @@ class RecipeSpec extends AnyFreeSpec with ChiselScalatestTester {
       recipe (
         waitUntil(w === 1.U),
         action { io.out := 100.U }
-      ).compile(CompileOpts.debugAll)
+      )().compile(CompileOpts.debugAll)
     }).withAnnotations(Seq(WriteVcdAnnotation)) { dut =>
       dut.io.out.expect(100.U)
       dut.clock.step(1)
@@ -146,7 +146,7 @@ class RecipeSpec extends AnyFreeSpec with ChiselScalatestTester {
         action {
           r := r + 1.U
         },
-        tick
+        tick()
       ).compile(CompileOpts.debugAll)
     }).withAnnotations(Seq(WriteVcdAnnotation)) { dut =>
       dut.io.out.expect(true)
@@ -170,8 +170,8 @@ class RecipeSpec extends AnyFreeSpec with ChiselScalatestTester {
         action {
           r := r + 1.U
         },
-        tick,
-        tick,
+        tick(),
+        tick(),
       ).compile(CompileOpts.default)
     }).withAnnotations(Seq(WriteVcdAnnotation)) { dut =>
       dut.io.out.expect(true)
@@ -186,13 +186,13 @@ class RecipeSpec extends AnyFreeSpec with ChiselScalatestTester {
   "simple doWhile" in {
     test(new ActiveSignalExample {
       val r = RegInit(UInt(8.W), 0.U)
-      doWhile(r < 5.U, io.out)(
+      doWhile(
         action {
           r := r + 1.U
         },
-        tick,
-        tick,
-      ).compile(CompileOpts.default)
+        tick(),
+        tick(),
+      )(r < 5.U, io.out).compile(CompileOpts.default)
     }).withAnnotations(Seq(WriteVcdAnnotation)) { dut =>
       dut.io.out.expect(true)
 
