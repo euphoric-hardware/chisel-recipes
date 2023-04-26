@@ -7,16 +7,24 @@ package object recipes {
     Tick(DebugInfo(line, fileName, enclosing, "tick"), active)
   }
 
+  def tick(implicit line: Line, fileName: FileName, enclosing: Enclosing): Recipe = {
+    Tick(DebugInfo(line, fileName, enclosing, "tick"), Wire(Bool()))
+  }
+
   def action(a: => Unit, active: Bool = Wire(Bool()))(implicit line: Line, fileName: FileName, enclosing: Enclosing): Recipe = {
     Action(() => a, DebugInfo(line, fileName, enclosing, "action"), active)
   }
 
-  def recipe(recipes: Recipe*)(active: Bool = Wire(Bool()))(implicit line: Line, fileName: FileName, enclosing: Enclosing): Recipe = {
+  def recipe(active: Bool, recipes: Recipe*)(implicit line: Line, fileName: FileName, enclosing: Enclosing): Recipe = {
     Sequential(recipes, DebugInfo(line, fileName, enclosing, "recipe"), active)
   }
 
+  def recipe(recipes: Recipe*)(implicit line: Line, fileName: FileName, enclosing: Enclosing): Recipe = {
+    Sequential(recipes, DebugInfo(line, fileName, enclosing, "recipe"), Wire(Bool()))
+  }
+
   private def whilePrim(cond: Bool, active: Bool = Wire(Bool()))(body: Recipe*)(line: Line, fileName: FileName, enclosing: Enclosing, entity: String): Recipe = {
-    While(cond, recipe(body:_*)(active)(line, fileName, enclosing), DebugInfo(line, fileName, enclosing, entity), active)
+    While(cond, recipe(active, body:_*)(line, fileName, enclosing), DebugInfo(line, fileName, enclosing, entity), active)
   }
 
   def whileLoop(cond: Bool, active: Bool = Wire(Bool()))(body: Recipe*)(implicit line: Line, fileName: FileName, enclosing: Enclosing): Recipe = {
@@ -29,13 +37,18 @@ package object recipes {
 
   def doWhile(body: Recipe*)(cond: Bool, active: Bool = Wire(Bool()))(implicit line: Line, fileName: FileName, enclosing: Enclosing): Recipe = {
     recipe (
-      recipe(body:_*)(),
+      active,
+      recipe(body:_*),
       whilePrim(cond)(body:_*)(line, fileName, enclosing, "doWhile")
-    )(active)
+    )
   }
 
-  def forever(r: Recipe*)(active: Bool = Wire(Bool()))(implicit line: Line, fileName: FileName, enclosing: Enclosing): Recipe = {
+  def forever(active: Bool, r: Recipe*)(implicit line: Line, fileName: FileName, enclosing: Enclosing): Recipe = {
     whilePrim(true.B, active)(r:_*)(line, fileName, enclosing, "forever")
+  }
+
+  def forever(r: Recipe*)(implicit line: Line, fileName: FileName, enclosing: Enclosing): Recipe = {
+    whilePrim(true.B)(r: _*)(line, fileName, enclosing, "forever")
   }
 
   def ifThenElse(cond: Bool, active: Bool = Wire(Bool()))(t: Recipe)(e: Recipe)(implicit line: Line, fileName: FileName, enclosing: Enclosing): Recipe = {
@@ -43,6 +56,6 @@ package object recipes {
   }
 
   def whenPrim(cond: Bool, active: Bool = Wire(Bool()))(body: Recipe*)(implicit line: Line, fileName: FileName, enclosing: Enclosing): Recipe = {
-    When(cond, recipe(body:_*)(active), DebugInfo(line, fileName, enclosing, "when"), active)
+    When(cond, recipe(active, body:_*), DebugInfo(line, fileName, enclosing, "when"), active)
   }
 }

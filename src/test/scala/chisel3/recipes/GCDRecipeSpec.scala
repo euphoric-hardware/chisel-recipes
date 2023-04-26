@@ -35,7 +35,7 @@ class GCDRecipe extends Module {
       },
       tick()
     ),
-  )().compile(CompileOpts.debug)
+  ).compile(CompileOpts.debug)
 }
 
 class GCDRecipeSpec extends AnyFreeSpec with ChiselScalatestTester {
