@@ -36,11 +36,17 @@ package object recipes {
   }
 
   def doWhile(body: Recipe*)(cond: Bool, active: Bool = Wire(Bool()))(implicit line: Line, fileName: FileName, enclosing: Enclosing): Recipe = {
+    val c: CompiledRecipe = compileRecipe(recipe(body:_*))
     recipe (
       active,
-      recipe(body:_*),
-      whilePrim(cond)(body:_*)(line, fileName, enclosing, "doWhile")
+      c,
+      whilePrim(cond)(c)(line, fileName, enclosing, "doWhile")
     )
+    // recipe (
+    //   active,
+    //   recipe(body:_*),
+    //   whilePrim(cond)(body:_*)(line, fileName, enclosing, "doWhile")
+    // )
   }
 
   def forever(active: Bool, r: Recipe*)(implicit line: Line, fileName: FileName, enclosing: Enclosing): Recipe = {

@@ -233,7 +233,16 @@ object Recipe {
         ifThenElseModule(i, cycleCounter, compileOpts)
       case w @ When(_, _, _, _) =>
         whenModule(w, cycleCounter, compileOpts)
+      case c @ CompiledRecipe(go, done, active) =>
+        g => {
+          go := g
+          (done, active)
+        }
     }
+  }
+
+  def compileToObject(r: Recipe, compileOpts: CompileOpts): CompiledRecipe = {
+    val recMod = compileNoPulse(r, 
   }
 
   def compile(r: Recipe, compileOpts: CompileOpts): (Bool, Bool) = {
@@ -274,3 +283,4 @@ private[recipes] case class While(cond: Bool, loop: Recipe, d: DebugInfo, active
 private[recipes] case class When(cond: Bool, body: Recipe, d: DebugInfo, active: Bool = Wire(Bool())) extends Recipe(active)
 private[recipes] case class IfThenElse(cond: Bool, thenCase: Recipe, elseCase: Recipe, d: DebugInfo, active: Bool = Wire(Bool())) extends Recipe(active)
 //case class Background(recipe: Recipe) extends Recipe
+private[recipes] case class CompiledRecipe(go: Bool, done: Bool, active: Bool, compileOpts: compileOpts, cycleCounter: UInt) extends Recipe(active)
