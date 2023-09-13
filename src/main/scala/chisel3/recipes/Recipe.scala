@@ -7,14 +7,14 @@ import sourcecode.{FileName, Line, Enclosing}
 object Recipe {
   private type RecipeModule = Bool => (Bool, Bool) // go: Bool => (done: Bool, active: Bool)
 
-  private def debugPrint(cycleCounter: UInt, entity: String, event: String, debugInfo: DebugInfo): Unit = {
-    chisel3.printf(cf"time=[$cycleCounter] [$entity] $event (${debugInfo.fileName.value}:${debugInfo.line.value}) ${debugInfo.enclosing.value}\n")
+  private def debugPrint(cycleCounter: UInt, event: String, debugInfo: DebugInfo): Unit = {
+    chisel3.printf(cf"time=[$cycleCounter] [${debugInfo.entity}] $event (${debugInfo.fileName.value}:${debugInfo.line.value}) ${debugInfo.enclosing.value}\n")
   }
 
-  private def canonicalName(entity: String, event: String, debugInfo: DebugInfo): String = {
+  private def canonicalName(event: String, debugInfo: DebugInfo): String = {
     val scalaFile = debugInfo.fileName.value.split('.').head
     val scalaFileLine = debugInfo.line.value
-    val name = s"${entity}_${event}_${scalaFile}_$scalaFileLine"
+    val name = s"${debugInfo.entity}_${event}_${scalaFile}_$scalaFileLine"
     name
   }
 
@@ -23,12 +23,12 @@ object Recipe {
     doneReg := go
 
     if (compileOpts.debugWires) {
-      val goName = canonicalName(tick.d.entity, "go", tick.d)
+      val goName = canonicalName("go", tick.d)
       val namedGo = WireDefault(go).suggestName(goName)
       forceName(namedGo, goName)
       dontTouch(namedGo)
 
-      val doneName = canonicalName(tick.d.entity, "done", tick.d)
+      val doneName = canonicalName("done", tick.d)
       val namedDone = WireDefault(doneReg).suggestName(doneName)
       forceName(namedDone, doneName)
       dontTouch(namedDone)
@@ -36,13 +36,8 @@ object Recipe {
 
     if (compileOpts.debugPrints.isDefined) {
       when(go) {
-        debugPrint(cycleCounter, tick.d.entity, "about to tick", tick.d)
+        debugPrint(cycleCounter, "about to tick", tick.d)
       }
-      /*
-      when(doneReg) {
-        debugPrint(cycleCounter, "Tick", "completed", tick.d)
-      }
-       */
     }
 
     tick.active := go
@@ -55,12 +50,12 @@ object Recipe {
     }
 
     if (compileOpts.debugWires) {
-      val goName = canonicalName(action.d.entity, "go", action.d)
+      val goName = canonicalName("go", action.d)
       val namedGo = WireDefault(go).suggestName(goName)
       forceName(namedGo, goName)
       dontTouch(namedGo)
 
-      val doneName = canonicalName(action.d.entity, "done", action.d)
+      val doneName = canonicalName("done", action.d)
       val namedDone = WireDefault(go).suggestName(doneName)
       forceName(namedDone, doneName)
       dontTouch(namedDone)
@@ -68,7 +63,7 @@ object Recipe {
 
     if (compileOpts.debugPrints.isDefined) {
       when(go) {
-        debugPrint(cycleCounter, action.d.entity, "is active", action.d)
+        debugPrint(cycleCounter, "is active", action.d)
       }
     }
 
@@ -83,12 +78,12 @@ object Recipe {
     }
 
     if (compileOpts.debugWires) {
-      val goName = canonicalName(sequential.d.entity, "go", sequential.d)
+      val goName = canonicalName("go", sequential.d)
       val namedGo = WireDefault(go).suggestName(goName)
       //forceName(namedGo, goName)
       dontTouch(namedGo)
 
-      val doneName = canonicalName(sequential.d.entity, "done", sequential.d)
+      val doneName = canonicalName("done", sequential.d)
       val namedDone = WireDefault(done).suggestName(doneName)
       //forceName(namedDone, doneName)
       dontTouch(namedDone)
@@ -96,10 +91,10 @@ object Recipe {
 
     if (compileOpts.debugPrints.isDefined && compileOpts.debugPrints.get.printBlocks) {
       when(go) {
-        debugPrint(cycleCounter, sequential.d.entity, "has started", sequential.d)
+        debugPrint(cycleCounter, "has started", sequential.d)
       }
       when(done) {
-        debugPrint(cycleCounter, sequential.d.entity, "has finished", sequential.d)
+        debugPrint(cycleCounter, "has finished", sequential.d)
       }
     }
 
@@ -122,12 +117,12 @@ object Recipe {
     }
 
     if (compileOpts.debugWires) {
-      val goName = canonicalName(w.d.entity, "go", w.d)
+      val goName = canonicalName("go", w.d)
       val namedGo = WireDefault(go).suggestName(goName)
       //forceName(namedGo, goName)
       dontTouch(namedGo)
 
-      val doneName = canonicalName(w.d.entity, "done", w.d)
+      val doneName = canonicalName("done", w.d)
       val namedDone = WireDefault(done).suggestName(doneName)
       //forceName(namedDone, doneName)
       dontTouch(namedDone)
@@ -135,10 +130,10 @@ object Recipe {
 
     if (compileOpts.debugPrints.isDefined) {
       when(go) {
-        debugPrint(cycleCounter, w.d.entity, "has started", w.d)
+        debugPrint(cycleCounter, "has started", w.d)
       }
       when(done) {
-        debugPrint(cycleCounter, w.d.entity, "has finished", w.d)
+        debugPrint(cycleCounter, "has finished", w.d)
       }
     }
 
@@ -162,12 +157,12 @@ object Recipe {
     }
 
     if (compileOpts.debugWires) {
-      val goName = canonicalName(i.d.entity, "go", i.d)
+      val goName = canonicalName("go", i.d)
       val namedGo = WireDefault(go).suggestName(goName)
       //forceName(namedGo, goName)
       dontTouch(namedGo)
 
-      val doneName = canonicalName(i.d.entity, "done", i.d)
+      val doneName = canonicalName("done", i.d)
       val namedDone = WireDefault(done).suggestName(doneName)
       //forceName(namedDone, doneName)
       dontTouch(namedDone)
@@ -175,10 +170,10 @@ object Recipe {
 
     if (compileOpts.debugPrints.isDefined) {
       when(go) {
-        debugPrint(cycleCounter, i.d.entity, "has started", i.d)
+        debugPrint(cycleCounter, "has started", i.d)
       }
       when(done) {
-        debugPrint(cycleCounter, i.d.entity, "has finished", i.d)
+        debugPrint(cycleCounter, "has finished", i.d)
       }
     }
 
@@ -196,12 +191,12 @@ object Recipe {
     }
 
     if (compileOpts.debugWires) {
-      val goName = canonicalName(w.d.entity, "go", w.d)
+      val goName = canonicalName("go", w.d)
       val namedGo = WireDefault(go).suggestName(goName)
       //forceName(namedGo, goName)
       dontTouch(namedGo)
 
-      val doneName = canonicalName(w.d.entity, "done", w.d)
+      val doneName = canonicalName("done", w.d)
       val namedDone = WireDefault(done).suggestName(doneName)
       //forceName(namedDone, doneName)
       dontTouch(namedDone)
@@ -209,10 +204,10 @@ object Recipe {
 
     if (compileOpts.debugPrints.isDefined) {
       when(go) {
-        debugPrint(cycleCounter, w.d.entity, "has started", w.d)
+        debugPrint(cycleCounter, "has started", w.d)
       }
       when(done) {
-        debugPrint(cycleCounter, w.d.entity, "has finished", w.d)
+        debugPrint(cycleCounter, "has finished", w.d)
       }
     }
 
@@ -269,8 +264,7 @@ private[recipes] case class Tick(d: DebugInfo, active: Bool = Wire(Bool())) exte
 private[recipes] case class Action(a: () => Unit, d: DebugInfo, active: Bool = Wire(Bool())) extends Recipe(active)
 private[recipes] case class Sequential(recipes: Seq[Recipe], d: DebugInfo, active: Bool = Wire(Bool())) extends Recipe(active)
 private[recipes] case class While(cond: Bool, loop: Recipe, d: DebugInfo, active: Bool = Wire(Bool())) extends Recipe(active)
-//case class Skip(next: Recipe) extends Recipe
-//case class Parallel(recipes: List[Recipe]) extends Recipe
 private[recipes] case class When(cond: Bool, body: Recipe, d: DebugInfo, active: Bool = Wire(Bool())) extends Recipe(active)
 private[recipes] case class IfThenElse(cond: Bool, thenCase: Recipe, elseCase: Recipe, d: DebugInfo, active: Bool = Wire(Bool())) extends Recipe(active)
-//case class Background(recipe: Recipe) extends Recipe
+// case class Parallel(recipes: List[Recipe]) extends Recipe
+// case class Background(recipe: Recipe) extends Recipe
