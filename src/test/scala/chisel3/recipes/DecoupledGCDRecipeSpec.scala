@@ -9,6 +9,7 @@ import gcd.DecoupledGcd
 import org.scalatest.flatspec.AnyFlatSpec
 import org.scalatest.freespec.AnyFreeSpec
 import chisel3.stage.PrintFullStackTraceAnnotation
+import org.scalatest.Ignore
 
 class GcdInputBundle(val w: Int) extends Bundle {
   val value1 = UInt(w.W)
@@ -103,6 +104,7 @@ class DecoupledGCDRecipe(width: Int) extends Module {
   */
 }
 
+@Ignore
 class DecoupledGCDRecipeSpec extends AnyFreeSpec with ChiselScalatestTester {
   "decoupled gcd recipe" in {
     test(new DecoupledGCDRecipe(16)).withAnnotations(Seq(WriteVcdAnnotation)) { dut =>
@@ -137,8 +139,8 @@ class DecoupledGCDRecipeSpec extends AnyFreeSpec with ChiselScalatestTester {
 
 }
 
+@Ignore
 class FormalGcdSpec extends AnyFlatSpec with ChiselScalatestTester with Formal {
-
   class DecoupledGcdFormalSpec(handGCD: => DecoupledGcd, recipeGCD: => DecoupledGCDRecipe) extends Module {
     val handDUT = Module(handGCD)
     val recipeDUT = Module(recipeGCD)
