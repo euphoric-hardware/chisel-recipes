@@ -7,9 +7,10 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v2
       - name: Setup Scala
-        uses: olafurpg/setup-scala@v11
+        uses: actions/setup-java@v3
         with:
-          java-version: openjdk@1.20
+          distribution: 'adopt'
+          java-version: '20'
       - name: Cache Scala
         uses: coursier/cache-action@v6
       - name: SBT Test
