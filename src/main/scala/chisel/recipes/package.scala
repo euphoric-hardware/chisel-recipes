@@ -1,6 +1,7 @@
-package chisel3
+package chisel
 
-import sourcecode.{Line, FileName, Enclosing}
+import chisel3.{Bool, Wire, fromBooleanToLiteral}
+import sourcecode.{Enclosing, FileName, Line}
 
 package object recipes {
   def tick(active: Bool = Wire(Bool()))(implicit line: Line, fileName: FileName, enclosing: Enclosing): Recipe = {

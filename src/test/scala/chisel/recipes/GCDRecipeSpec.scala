@@ -1,4 +1,4 @@
-package chisel3.recipes
+package chisel.recipes
 
 import chisel3._
 import chiseltest._
