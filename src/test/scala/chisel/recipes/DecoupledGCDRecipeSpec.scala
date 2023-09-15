@@ -70,6 +70,7 @@ class DecoupledGCDRecipe(width: Int) extends Module {
     waitUntil(output.ready, resultValid),
   )(true.B).compile(CompileOpts.debug)
 /*
+
   forever (
     waitUntil(input.valid),
     action {
