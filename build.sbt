@@ -6,6 +6,8 @@ ThisBuild / developers       := List(
   Developer("vighneshiyer", "Vighnesh Iyer", "vighnesh.iyer@berkeley.edu", url("https://vighneshiyer.com/")),
   Developer("bdngo", "Bryan Ngo", "bryanngo@berkeley.edu", url("https://bdngo.github.io/"))
 )
+ThisBuild / versionScheme    := Some("semver-spec")
+ThisBuild / sonatypeCredentialHost := "s01.oss.sonatype.org"
 
 val chiselVersion = "3.6.0"
 
@@ -23,6 +25,7 @@ lazy val root = (project in file("."))
       "-feature",
       "-Xcheckinit"
     ),
+    sonatypeRepository := "https://s01.oss.sonatype.org/service/local",
     addCompilerPlugin("edu.berkeley.cs" % "chisel3-plugin" % chiselVersion cross CrossVersion.full),
   )
 
